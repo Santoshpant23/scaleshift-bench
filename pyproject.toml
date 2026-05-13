@@ -1,0 +1,79 @@
+[project]
+name = "scaleshift-bench"
+version = "0.0.1"
+description = "Scale-aware benchmarking + adaptation of geospatial foundation models for smallholder agriculture."
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Santosh Pant" }]
+
+dependencies = [
+    "numpy>=1.26,<2.1",
+    "pydantic>=2.7",
+    "rasterio>=1.3",
+    "shapely>=2.0",
+    "geopandas>=0.14",
+    "pyproj>=3.6",
+    "torch>=2.2,<2.6",
+    "torchvision>=0.17",
+    "einops>=0.8",
+    "scikit-learn>=1.4",
+    "tqdm>=4.66",
+    "pyyaml>=6.0",
+    "wandb>=0.17",
+    "rich>=13.7",
+    "earthengine-api>=0.1.400",
+    "huggingface-hub>=0.24",
+]
+
+[project.optional-dependencies]
+# claymodel is not on PyPI; install from the Clay-foundation/model repo.
+clay     = ["claymodel @ git+https://github.com/Clay-foundation/model.git@main"]
+prithvi  = ["terratorch>=0.99", "timm>=1.0"]
+# nasaharvest/presto declares its package name as `presto` in setup.py.
+presto   = ["presto @ git+https://github.com/nasaharvest/presto.git@main"]
+# AnySat is loaded via torch.hub at runtime; no pip install required.
+# We still include git+pip for users who prefer it; the wrapper uses torch.hub.
+anysat   = ["anysat @ git+https://github.com/gastruc/AnySat.git@main"]
+terramind = ["terratorch>=0.99"]
+all      = [
+    "claymodel @ git+https://github.com/Clay-foundation/model.git@main",
+    "terratorch>=0.99",
+    "timm>=1.0",
+    "presto @ git+https://github.com/nasaharvest/presto.git@main",
+    "anysat @ git+https://github.com/gastruc/AnySat.git@main",
+]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.5",
+    "mypy>=1.10",
+    "pre-commit>=3.7",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/scaleshift"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+markers = [
+    "gpu: requires CUDA",
+    "model_clay: requires claymodel installed",
+    "model_prithvi: requires terratorch + Prithvi-EO-2.0 weights",
+    "model_presto: requires presto installed",
+    "model_anysat: requires AnySat installed",
+    "model_terramind: requires terratorch + TerraMind weights",
+]

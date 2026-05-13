@@ -1,0 +1,64 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+.installed.cfg
+*.egg
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# Envs
+.venv/
+venv/
+env/
+.python-version.local
+
+# Data and weights (do NOT check in)
+# Scope to project root so the Python package `src/scaleshift/data/` is not ignored.
+/data/
+/weights/
+/checkpoints/
+/outputs/
+/runs/
+/wandb/
+/mlruns/
+*.tif
+*.tiff
+*.nc
+*.h5
+*.hdf5
+*.pkl
+*.npz
+*.parquet
+!tests/fixtures/*.tif
+
+# Secrets
+.env
+.env.*
+*.pem
+*.key
+gee-service-account*.json
+.secrets/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*~
+
+# Jupyter
+.ipynb_checkpoints/
+*-checkpoint.ipynb
