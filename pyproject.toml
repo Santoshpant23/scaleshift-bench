@@ -16,7 +16,8 @@ dependencies = [
     "pyproj>=3.6",
     "torch>=2.2,<2.6",
     "torchvision>=0.17",
-    "einops>=0.8",
+    # 0.7 keeps us compatible with claymodel==1.5.0 which pins einops<0.8.
+    "einops>=0.7",
     "scikit-learn>=1.4",
     "tqdm>=4.66",
     "pyyaml>=6.0",
@@ -28,20 +29,19 @@ dependencies = [
 
 [project.optional-dependencies]
 # claymodel is not on PyPI; install from the Clay-foundation/model repo.
-clay     = ["claymodel @ git+https://github.com/Clay-foundation/model.git@main"]
-prithvi  = ["terratorch>=0.99", "timm>=1.0"]
-# nasaharvest/presto declares its package name as `presto` in setup.py.
-presto   = ["presto @ git+https://github.com/nasaharvest/presto.git@main"]
-# AnySat is loaded via torch.hub at runtime; no pip install required.
-# We still include git+pip for users who prefer it; the wrapper uses torch.hub.
-anysat   = ["anysat @ git+https://github.com/gastruc/AnySat.git@main"]
+clay      = ["claymodel @ git+https://github.com/Clay-foundation/model.git@main"]
+prithvi   = ["terratorch>=0.99", "timm>=1.0"]
 terramind = ["terratorch>=0.99"]
-all      = [
+# NOTE: anysat has no pyproject.toml/setup.py in the upstream repo - it is
+# loaded at runtime via torch.hub.load("gastruc/anysat", ...). No pip install.
+#
+# NOTE: presto pins earthengine-api==0.1.334 (Aug 2023) which conflicts with
+# this project's GEE usage. It will be installed in a separate Phase 1 sub-env
+# (or via a fork) when we implement the chip -> dataops adapter.
+all       = [
     "claymodel @ git+https://github.com/Clay-foundation/model.git@main",
     "terratorch>=0.99",
     "timm>=1.0",
-    "presto @ git+https://github.com/nasaharvest/presto.git@main",
-    "anysat @ git+https://github.com/gastruc/AnySat.git@main",
 ]
 dev = [
     "pytest>=8.0",
@@ -78,7 +78,7 @@ markers = [
     "gpu: requires CUDA",
     "model_clay: requires claymodel installed",
     "model_prithvi: requires terratorch + Prithvi-EO-2.0 weights",
-    "model_presto: requires presto installed",
-    "model_anysat: requires AnySat installed",
+    "model_presto: requires presto installed (Phase 1 sub-env)",
+    "model_anysat: AnySat loaded at runtime via torch.hub",
     "model_terramind: requires terratorch + TerraMind weights",
 ]

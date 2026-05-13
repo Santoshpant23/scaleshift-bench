@@ -75,8 +75,10 @@ log "Installing dev extras"
 uv pip install -e ".[dev]"
 
 # ---- 5. Model extras (each guarded so a single failure doesn't abort) -----
+# AnySat is loaded at runtime via torch.hub.load (no pip install needed).
+# Presto pins an old earthengine-api and is deferred to a Phase 1 sub-env.
 declare -a EXTRA_RESULTS=()
-for extra in clay prithvi terramind anysat presto; do
+for extra in clay prithvi terramind; do
     log "Installing model extra: $extra"
     if uv pip install -e ".[${extra}]"; then
         EXTRA_RESULTS+=("$extra: ok")
@@ -85,6 +87,8 @@ for extra in clay prithvi terramind anysat presto; do
         EXTRA_RESULTS+=("$extra: FAILED")
     fi
 done
+EXTRA_RESULTS+=("anysat: runtime via torch.hub (no pip install)")
+EXTRA_RESULTS+=("presto: deferred to Phase 1 sub-env")
 
 # ---- 6. Sanity checks ------------------------------------------------------
 log "Smoke test: import package"
