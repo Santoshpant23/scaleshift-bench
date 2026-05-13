@@ -53,8 +53,9 @@ cd ~/scaleshift-bench
 # 3. Run setup (installs uv, venv, torch, all FM extras)
 bash scripts/setup_lambdavector2.sh
 
-# 4. Authenticate Earth Engine (interactive)
-.venv/bin/earthengine authenticate
+# 4. Authenticate Earth Engine (interactive, headless-friendly mode)
+.venv/bin/earthengine authenticate --auth_mode=notebook
+export EE_PROJECT=<your-gcp-project-id>   # add to ~/.bashrc for persistence
 
 # 5. (Optional) pull a real Terai chip
 .venv/bin/python scripts/download_sample_chip.py

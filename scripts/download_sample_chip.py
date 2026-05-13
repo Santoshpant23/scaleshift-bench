@@ -6,12 +6,15 @@ Date window: post-monsoon 2024, lowest-cloud scene picked from the collection.
 
 Output: tests/fixtures/terai_sample.tif (10 bands, 10 m, reflectance / 10000).
 
-Run once on lambdavector2 after `earthengine authenticate`.
+Prereqs:
+    earthengine authenticate --auth_mode=notebook   # one-time
+    export EE_PROJECT=<your-gcp-project-id>         # or pass --project
 """
 
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
 
 import ee
@@ -64,12 +67,23 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--start", default="2024-10-01")
     p.add_argument("--end", default="2024-12-31")
     p.add_argument("--out", type=Path, default=DEFAULT_OUT)
+    p.add_argument(
+        "--project",
+        default=os.getenv("EE_PROJECT"),
+        help="GCP project ID for Earth Engine (or set EE_PROJECT env var)",
+    )
     return p.parse_args()
 
 
 def main() -> int:
     args = parse_args()
-    ee.Initialize()
+    if not args.project:
+        log.error(
+            "Earth Engine requires a project ID. Pass --project <id> or set EE_PROJECT. "
+            "Find yours at https://console.cloud.google.com/earth-engine"
+        )
+        return 2
+    ee.Initialize(project=args.project)
     half = args.size_m / 2.0
     pt = ee.Geometry.Point([args.lon, args.lat])
     geom = pt.buffer(half).bounds()

@@ -103,11 +103,15 @@ if ! pytest -m "not gpu" --maxfail=5 -q; then
 fi
 
 # ---- 7. GEE auth (interactive — user must run separately) -----------------
+# Note: default 'earthengine authenticate' requires gcloud CLI (system tool).
+# Use --auth_mode=notebook on a headless server without root access.
 if [ -f "$HOME/.config/earthengine/credentials" ]; then
     log "Earth Engine credentials present"
 else
     warn "Earth Engine credentials not found. After this script finishes:"
-    warn "    source .venv/bin/activate && earthengine authenticate"
+    warn "    source .venv/bin/activate"
+    warn "    earthengine authenticate --auth_mode=notebook"
+    warn "    export EE_PROJECT=<your-gcp-project-id>   # add to ~/.bashrc"
 fi
 
 # ---- 8. W&B login (optional, interactive on first run) --------------------
@@ -125,7 +129,8 @@ log ""
 log "Setup complete."
 log "Next:"
 log "  source .venv/bin/activate"
-log "  earthengine authenticate                  # one-time, interactive"
-log "  python scripts/download_sample_chip.py    # pull a Terai chip via GEE"
+log "  earthengine authenticate --auth_mode=notebook   # one-time, headless-friendly"
+log "  export EE_PROJECT=<your-gcp-project-id>          # add to ~/.bashrc"
+log "  python scripts/download_sample_chip.py           # pull a Terai chip via GEE"
 log "  python scripts/verify_install.py --device cuda \\"
 log "      --chip tests/fixtures/terai_sample.tif"
