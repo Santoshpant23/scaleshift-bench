@@ -12,9 +12,28 @@ time-series modality it also requires a ``{modality}_dates`` tensor of shape
 ``patch_size`` is specified at call time in meters and must be a multiple of 10.
 README examples use ``patch_size=10`` and ``patch_size=20``. ``40`` is NOT
 documented as a supported value. We default to **20 m** so the token tile is
-2x2 pixels at S2 10 m GSD. For Phase 3 mechanistic analysis, this means AnySat
-has more tokens per chip than Clay/Prithvi/TerraMind, which is fine - the
-patch-boundary effect still applies, just at a finer granularity.
+2x2 pixels at S2 10 m GSD.
+
+## Output mode caveat (Phase 0 sign-off, Phase 3 revisit)
+
+AnySat's ``output='patch'`` mode in the released hub checkpoint emits a 3D
+tensor of shape ``[B, P, D]`` with P = 92160 = 96 * 96 * 10 for a 240-px input
+at patch_size=20. The 10 factor is the S2 band count, i.e. AnySat returns per-
+band sub-patch tokens, NOT a single ViT-style 14x14 patch grid. This means:
+
+1. Memory at ``output='patch'`` is ~27 GB on a single 240-px chip (A6000 fits
+   single-chip but not batched).
+2. The token grid is not directly comparable to Clay/Prithvi/TerraMind's
+   single-modality ViT tokens, breaking the Phase 3 patch-boundary analysis
+   premise for AnySat specifically.
+
+For Phase 0 sign-off we default to ``output='tile'`` which returns a single
+pooled vector per chip ``[B, D]`` (cheap, fast, suitable for Phase 2 zero-
+shot eval). The Phase 3 mechanistic analysis will need a follow-up audit:
+either AnySat is included via ``output='dense'`` (and we explain the per-band
+token structure carefully), or AnySat is documented as a "tile-only baseline"
+that gives a competitive zero-shot reference but cannot be patch-boundary
+probed. Decide this after Phase 1 chips are in hand.
 """
 
 from __future__ import annotations
@@ -42,6 +61,11 @@ class AnySatFoundationModel(FoundationModel):
     patch_size_px: ClassVar[int | None] = 2
     pretrained_id: ClassVar[str | None] = "gastruc/anysat"
     patch_size_m: ClassVar[int] = 20  # 20 m is the largest documented value in the README
+    # Phase 0: 'tile' returns [B, D]; cheap, comparable to other FMs' pooled feature.
+    # Phase 3 may revisit and switch to 'dense' or 'all' once we audit token shape.
+    output_mode: ClassVar[str] = "tile"
+    pooling_method: ClassVar[str] = "tile"
+    has_cls_token: ClassVar[bool] = False
 
     def load(self) -> None:
         if self._loaded:
@@ -99,16 +123,28 @@ class AnySatFoundationModel(FoundationModel):
         if not self._loaded:
             self.load()
         with torch.no_grad():
-            tokens = self._model(
+            out = self._model(
                 batch,
                 patch_size=self.patch_size_m,
-                output="patch" if return_tokens else "tile",
+                output=self.output_mode,
             )
-        if tokens.dim() == 4:
-            tokens = tokens.flatten(2).transpose(1, 2)
-        features = tokens.mean(dim=1) if tokens.dim() == 3 else tokens
-        return ModelOutput(
-            tokens=tokens if return_tokens and tokens.dim() == 3 else None,
-            features=features,
-            attention=None,
-        )
+        # In 'tile' mode AnySat returns a single [B, D] pooled vector per chip.
+        # No token grid is exposed. Phase 3 mechanistic analysis on AnySat
+        # requires switching this wrapper to 'dense' or 'all'; until then,
+        # token-level analysis on AnySat is disabled by design.
+        if out.dim() == 2:
+            features = out
+            tokens = None
+        elif out.dim() == 3:
+            tokens = out if return_tokens else None
+            features = out.mean(dim=1)
+        elif out.dim() == 4:
+            # [B, D, H, W] -> [B, N, D]
+            out = out.flatten(2).transpose(1, 2)
+            tokens = out if return_tokens else None
+            features = out.mean(dim=1)
+        else:
+            raise RuntimeError(
+                f"Unexpected AnySat output rank {out.dim()} with shape {tuple(out.shape)}"
+            )
+        return ModelOutput(tokens=tokens, features=features, attention=None)

@@ -105,6 +105,8 @@ class ClayFoundationModel(FoundationModel):
     patch_size_px: ClassVar[int | None] = 8
     pretrained_id: ClassVar[str | None] = "made-with-clay/Clay"
     checkpoint_filename: ClassVar[str] = "v1.5/clay-v1.5.ckpt"
+    pooling_method: ClassVar[str] = "cls"
+    has_cls_token: ClassVar[bool] = True
 
     def load(self) -> None:
         if self._loaded:

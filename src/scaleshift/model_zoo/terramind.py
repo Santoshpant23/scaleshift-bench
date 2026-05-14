@@ -45,6 +45,8 @@ class TerraMindFoundationModel(FoundationModel):
     patch_size_px: ClassVar[int | None] = 16
     pretrained_id: ClassVar[str | None] = "ibm-esa-geospatial/TerraMind-1.0-base"
     backbone_name: ClassVar[str] = "terramind_v1_base"
+    pooling_method: ClassVar[str] = "mean"
+    has_cls_token: ClassVar[bool] = False
 
     def load(self) -> None:
         if self._loaded:

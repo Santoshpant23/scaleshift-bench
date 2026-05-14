@@ -50,6 +50,10 @@ class FoundationModel(ABC):
     default_input_size_px: ClassVar[int] = 224
     patch_size_px: ClassVar[int | None] = None
     pretrained_id: ClassVar[str | None] = None
+    # Telemetry: how the wrapper builds the pooled `features` from tokens.
+    # Values: 'cls', 'mean', 'mean_no_cls', 'tile', 'pixel'.
+    pooling_method: ClassVar[str] = "mean"
+    has_cls_token: ClassVar[bool] = False
 
     def __init__(self, device: str = "cuda", dtype: torch.dtype = torch.float32) -> None:
         self.device = device
@@ -96,6 +100,8 @@ class FoundationModel(ABC):
             "required_modalities": sorted(self.required_modalities),
             "default_input_size_px": self.default_input_size_px,
             "patch_size_px": self.patch_size_px,
+            "pooling_method": self.pooling_method,
+            "has_cls_token": self.has_cls_token,
             "device": self.device,
             "loaded": self._loaded,
         }

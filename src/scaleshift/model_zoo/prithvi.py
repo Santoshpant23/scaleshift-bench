@@ -50,6 +50,8 @@ class PrithviFoundationModel(FoundationModel):
     patch_size_px: ClassVar[int | None] = 16
     pretrained_id: ClassVar[str | None] = "ibm-nasa-geospatial/Prithvi-EO-2.0-300M"
     backbone_name: ClassVar[str] = "prithvi_eo_v2_300"
+    pooling_method: ClassVar[str] = "mean_no_cls"
+    has_cls_token: ClassVar[bool] = True
 
     def load(self) -> None:
         if self._loaded:
@@ -103,9 +105,14 @@ class PrithviFoundationModel(FoundationModel):
             out = out[-1]
         if out.dim() == 4:
             out = out.flatten(2).transpose(1, 2)  # [B, N, D]
-        features = out.mean(dim=1)
+        # PrithviViT prepends a CLS token at index 0. Drop it from both the
+        # pooled feature and the returned token grid so Phase 3 patch-grid
+        # analysis sees a clean 14x14 = 196-token grid, and the pooled vector
+        # doesn't average a non-spatial token into the spatial mean.
+        patch_tokens = out[:, 1:]
+        features = patch_tokens.mean(dim=1)
         return ModelOutput(
-            tokens=out if return_tokens else None,
+            tokens=patch_tokens if return_tokens else None,
             features=features,
             attention=None,
         )

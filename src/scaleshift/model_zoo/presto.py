@@ -57,6 +57,8 @@ class PrestoFoundationModel(FoundationModel):
     default_input_size_px: ClassVar[int] = 1  # per-pixel
     patch_size_px: ClassVar[int | None] = None
     pretrained_id: ClassVar[str | None] = "nasaharvest/presto"
+    pooling_method: ClassVar[str] = "pixel"
+    has_cls_token: ClassVar[bool] = False
 
     def load(self) -> None:
         if self._loaded:
