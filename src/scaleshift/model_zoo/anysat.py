@@ -80,8 +80,9 @@ class AnySatFoundationModel(FoundationModel):
                 mode="bilinear",
                 align_corners=False,
             )
-        # AnySat expects a dict of {modality_name: tensor}. The model resolves
-        # patch_size at forward-time via the patch_size kwarg.
+        # AnySat enforces 5D inputs per modality: [B, T, C, H, W]. For
+        # single-time chips we insert T=1.
+        t = t.unsqueeze(1)
         return {"s2": t}
 
     def encode(

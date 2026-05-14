@@ -19,7 +19,11 @@ Patch tokenization: 8 px on a 256 px input (ViT-B-like backbone, dim 768).
 
 from __future__ import annotations
 
+import contextlib
+import os
+import urllib.request
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import ClassVar
 
 import numpy as np
@@ -32,6 +36,39 @@ from scaleshift.model_zoo.base import (
     FoundationModelNotInstalledError,
     ModelOutput,
 )
+
+
+CLAY_METADATA_URL = (
+    "https://raw.githubusercontent.com/Clay-foundation/model/main/configs/metadata.yaml"
+)
+CLAY_CACHE_DIR = Path.home() / ".cache" / "scaleshift" / "clay"
+
+
+def _ensure_clay_metadata_cwd() -> Path:
+    """Cache Clay's configs/metadata.yaml and return the dir to chdir into.
+
+    The Clay v1.5 checkpoint stores ``metadata_path='configs/metadata.yaml'``
+    as a relative path in its saved hparams, so load_from_checkpoint fails to
+    resolve the file when CWD is anything other than the Clay source tree.
+    We cache the YAML under ~/.cache/scaleshift/clay/configs/ and chdir to
+    its parent during load.
+    """
+    configs_dir = CLAY_CACHE_DIR / "configs"
+    configs_dir.mkdir(parents=True, exist_ok=True)
+    metadata_file = configs_dir / "metadata.yaml"
+    if not metadata_file.exists():
+        urllib.request.urlretrieve(CLAY_METADATA_URL, metadata_file)
+    return CLAY_CACHE_DIR
+
+
+@contextlib.contextmanager
+def _chdir(path: Path):
+    old = os.getcwd()
+    try:
+        os.chdir(path)
+        yield
+    finally:
+        os.chdir(old)
 
 
 # Canonical from Clay-foundation/model:configs/metadata.yaml (raw L2A scale).
@@ -93,7 +130,9 @@ class ClayFoundationModel(FoundationModel):
         ckpt_path = hf_hub_download(
             repo_id=self.pretrained_id, filename=self.checkpoint_filename
         )
-        self._module = ClayMAEModule.load_from_checkpoint(ckpt_path)
+        cache_dir = _ensure_clay_metadata_cwd()
+        with _chdir(cache_dir):
+            self._module = ClayMAEModule.load_from_checkpoint(ckpt_path)
         self._module = self._module.to(self.device).eval()
         self._loaded = True
 

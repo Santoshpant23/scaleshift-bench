@@ -8,8 +8,11 @@ from typing import Self
 import numpy as np
 
 
+# Canonical Sentinel-2 L2A band order (12 bands, excludes B10 which is L1C-only).
+# TerraMind requires all 12; Clay/Prithvi use a subset via `select_s2_bands`.
 S2_BAND_ORDER: list[str] = [
-    "B02", "B03", "B04", "B05", "B06", "B07", "B08", "B8A", "B11", "B12",
+    "B01", "B02", "B03", "B04", "B05", "B06",
+    "B07", "B08", "B8A", "B09", "B11", "B12",
 ]
 
 S1_BAND_ORDER: list[str] = ["VV", "VH"]

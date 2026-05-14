@@ -23,7 +23,11 @@ from scaleshift.utils.logging import get_logger
 
 log = get_logger("download")
 
-S2_BANDS = ["B2", "B3", "B4", "B5", "B6", "B7", "B8", "B8A", "B11", "B12"]
+# Canonical 12-band Sentinel-2 L2A set (excludes B10 cirrus, which is L1C-only).
+# TerraMind requires all 12; Clay/Prithvi use subsets at preprocess time.
+# Note: EE band names use B1, B2, ... (no leading zero); our internal
+# S2_BAND_ORDER uses B01, B02, ... and the mapping is positional.
+S2_BANDS = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B8A", "B9", "B11", "B12"]
 DEFAULT_OUT = Path("tests/fixtures/terai_sample.tif")
 
 

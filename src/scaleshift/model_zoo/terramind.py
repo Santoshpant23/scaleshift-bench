@@ -29,10 +29,12 @@ from scaleshift.model_zoo.base import (
 )
 
 
-# S2 bands used by TerraMind in S2L2A mode (12-band order per ESA L2A spec).
-# We supply the 10 finite-resolution bands the model is most commonly asked for.
+# TerraMind S2L2A patch-embed expects 12 channels per token. The proj weight
+# shape is 3072 x 768 (3072 = 16*16*12). Supplying 10 bands fails with a matmul
+# shape mismatch. Canonical ESA L2A order (excludes B10 which is L1C-only).
 TERRAMIND_S2_BANDS: list[str] = [
-    "B02", "B03", "B04", "B05", "B06", "B07", "B08", "B8A", "B11", "B12",
+    "B01", "B02", "B03", "B04", "B05", "B06",
+    "B07", "B08", "B8A", "B09", "B11", "B12",
 ]
 
 

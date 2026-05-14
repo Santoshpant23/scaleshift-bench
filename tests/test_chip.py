@@ -10,7 +10,7 @@ from scaleshift.data.chip import S2_BAND_ORDER, Chip
 
 def test_synthetic_chip_shape():
     chip = Chip.synthetic(size_px=64)
-    assert chip.s2.shape == (10, 64, 64)
+    assert chip.s2.shape == (12, 64, 64)  # canonical L2A band count
     assert chip.s1.shape == (2, 64, 64)
     assert chip.dem.shape == (64, 64)
     assert chip.height_px == 64
@@ -22,7 +22,7 @@ def test_synthetic_chip_shape():
 def test_synthetic_timeseries():
     chip = Chip.synthetic(size_px=32, time_steps=12)
     assert chip.has_time
-    assert chip.s2.shape == (12, 10, 32, 32)
+    assert chip.s2.shape == (12, 12, 32, 32)  # [T=12, C=12, H, W]
 
 
 def test_select_s2_bands():
@@ -47,6 +47,6 @@ def test_validate_rejects_bad_lat():
 
 def test_validate_rejects_band_count_mismatch():
     chip = Chip.synthetic(size_px=16)
-    chip.s2_bands = ["B02", "B03"]  # claim 2 bands but array has 10
+    chip.s2_bands = ["B02", "B03"]  # claim 2 bands but array has 12
     with pytest.raises(ValueError, match="s2 has"):
         chip.validate()
