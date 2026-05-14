@@ -62,11 +62,18 @@ class AnySatFoundationModel(FoundationModel):
         self._model = self._model.to(self.device).eval()
         self._loaded = True
 
+    # AnySat's S2 projector was trained on 10 bands (the 10/20 m bands; B01 and
+    # B09 are 60 m bands that AnySat does not consume). Selecting the canonical
+    # 10-band subset prevents a matmul shape mismatch against the [10, 96] weight.
+    S2_BANDS: ClassVar[list[str]] = [
+        "B02", "B03", "B04", "B05", "B06", "B07", "B08", "B8A", "B11", "B12",
+    ]
+
     def preprocess(self, chip: Chip) -> dict[str, torch.Tensor]:
         chip.validate()
         if chip.s2 is None:
             raise ValueError("AnySat preprocessing requires S2 data.")
-        s2 = chip.s2.astype(np.float32)
+        s2 = chip.select_s2_bands(self.S2_BANDS).astype(np.float32)
         t = torch.from_numpy(s2).to(self.device).to(self.dtype).unsqueeze(0)
         if t.dim() == 4:
             t = F.interpolate(
