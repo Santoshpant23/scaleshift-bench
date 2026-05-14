@@ -1,23 +1,25 @@
 """AnySat wrapper (CVPR 2025, Astruc et al.).
 
-Reference:
-    https://github.com/gastruc/AnySat
-    https://arxiv.org/abs/2412.14123
+Reference (source of truth):
+    https://raw.githubusercontent.com/gastruc/AnySat/main/hubconf.py
+    https://raw.githubusercontent.com/gastruc/AnySat/main/README.md
     Loaded via ``torch.hub.load('gastruc/anysat', 'anysat', pretrained=True)``.
 
-AnySat is a JEPA-based, multi-resolution, multi-modal FM. ``patch_size`` is
-specified at call time **in meters**, not pixels. At S2 native 10 m GSD:
-    patch_size=10  -> 1 px per token  (degenerate, do not use for patch-boundary analysis)
-    patch_size=20  -> 2 px per token  (matches Sentinel-2 10 m / 20 m hybrid)
-    patch_size=40  -> 4 px per token  (default useful granularity)
+AnySat enforces 5D inputs per modality: ``[B, T, C, H, W]``. For each
+time-series modality it also requires a ``{modality}_dates`` tensor of shape
+``[B, T]`` containing day-of-year integers (01/01 = 0, 31/12 = 364).
 
-We expose ``patch_size_m`` (the model's native arg) and derive ``patch_size_px``
-from the chip's GSD at preprocess time. For Phase 3 mechanistic analysis we use
-``patch_size_m=40`` so the token tile is 4×4 pixels — comparable to other FMs.
+``patch_size`` is specified at call time in meters and must be a multiple of 10.
+README examples use ``patch_size=10`` and ``patch_size=20``. ``40`` is NOT
+documented as a supported value. We default to **20 m** so the token tile is
+2x2 pixels at S2 10 m GSD. For Phase 3 mechanistic analysis, this means AnySat
+has more tokens per chip than Clay/Prithvi/TerraMind, which is fine - the
+patch-boundary effect still applies, just at a finer granularity.
 """
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import ClassVar
 
 import numpy as np
@@ -35,22 +37,15 @@ from scaleshift.model_zoo.base import (
 class AnySatFoundationModel(FoundationModel):
     name: ClassVar[str] = "anysat"
     required_modalities: ClassVar[set[str]] = {"s2"}
-    default_input_size_px: ClassVar[int] = 240  # AnySat prefers sizes divisible by 40m / 10m = 4
-    # patch_size_px below = patch_size_m / gsd_m. We pick 40m → 4 px at S2 10m GSD,
-    # consistent with the patch-boundary analysis in Phase 3.
-    patch_size_px: ClassVar[int | None] = 4
+    default_input_size_px: ClassVar[int] = 240
+    # patch_size_px = patch_size_m / gsd_m = 20 / 10 = 2 at S2 native.
+    patch_size_px: ClassVar[int | None] = 2
     pretrained_id: ClassVar[str | None] = "gastruc/anysat"
-    patch_size_m: ClassVar[int] = 40
+    patch_size_m: ClassVar[int] = 20  # 20 m is the largest documented value in the README
 
     def load(self) -> None:
         if self._loaded:
             return
-        try:
-            import torch.hub  # noqa: F401  (torch.hub is part of torch, but guard anyway)
-        except ImportError as e:
-            raise FoundationModelNotInstalledError(
-                "torch.hub unavailable — should not happen with PyTorch."
-            ) from e
         try:
             self._model = torch.hub.load(
                 "gastruc/anysat",
@@ -80,10 +75,13 @@ class AnySatFoundationModel(FoundationModel):
                 mode="bilinear",
                 align_corners=False,
             )
-        # AnySat enforces 5D inputs per modality: [B, T, C, H, W]. For
-        # single-time chips we insert T=1.
+        # AnySat enforces 5D inputs per modality: [B, T, C, H, W]. T=1 for single-time.
         t = t.unsqueeze(1)
-        return {"s2": t}
+        # s2_dates: day-of-year integers, shape [B, T] (per README convention).
+        date = chip.date or datetime(2024, 6, 15, tzinfo=timezone.utc)
+        doy = date.timetuple().tm_yday - 1  # 0..364
+        s2_dates = torch.tensor([[doy]], dtype=torch.long, device=self.device)
+        return {"s2": t, "s2_dates": s2_dates}
 
     def encode(
         self,

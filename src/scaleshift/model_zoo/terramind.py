@@ -85,7 +85,11 @@ class TerraMindFoundationModel(FoundationModel):
         if not self._loaded:
             self.load()
         with torch.no_grad():
-            tokens = self._model(batch)
+            out = self._model(batch)
+        # terratorch TerraMindViT.forward returns list[Tensor], one tensor per
+        # encoder block. The last element is the LayerNorm'd final output.
+        # See terratorch/models/backbones/terramind/model/terramind_vit.py.
+        tokens = out[-1] if isinstance(out, (list, tuple)) else out
         if tokens.dim() == 4:
             tokens = tokens.flatten(2).transpose(1, 2)  # [B, N, D]
         features = tokens.mean(dim=1)

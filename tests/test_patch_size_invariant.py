@@ -19,7 +19,7 @@ from scaleshift.model_zoo import get_model
 EXPECTED_PATCH_SIZE_PX: dict[str, int | None] = {
     "clay-v1": 8,
     "prithvi-eo-2.0-300m": 16,
-    "anysat": 4,                # = patch_size_m (40m) / GSD (10m); see anysat.py
+    "anysat": 2,                # = patch_size_m (20m) / GSD (10m); see anysat.py
     "terramind-v1-base": 16,
     "presto": None,             # pixel-based; no spatial patch
 }
