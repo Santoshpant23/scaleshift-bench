@@ -250,11 +250,26 @@ def main() -> int:
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
 
-    tok_df = examples[["row_idx", "example_id", "label", "size_bin", "district"]].copy()
+    # Merge with existing diagnostic so a partial re-run (e.g. --fms anysat
+    # only) does not wipe the columns of FMs from a previous run.
+    new_df = examples[["row_idx", "example_id", "label", "size_bin", "district"]].copy()
     for fm_name, arr in n_tokens_table.items():
-        tok_df[f"n_tokens_{fm_name}"] = arr
-    tok_df.to_parquet(args.out_dir / "n_tokens_per_example.parquet")
-    log.info("Wrote per-example token-count diagnostics")
+        new_df[f"n_tokens_{fm_name}"] = arr
+
+    diag_path = args.out_dir / "n_tokens_per_example.parquet"
+    if diag_path.exists():
+        existing = pd.read_parquet(diag_path)
+        new_cols = set(new_df.columns)
+        extra_cols = [c for c in existing.columns
+                      if c.startswith("n_tokens_") and c not in new_cols]
+        if extra_cols:
+            new_df = new_df.merge(
+                existing[["example_id"] + extra_cols], on="example_id", how="left"
+            )
+            log.info("Preserved %d existing FM column(s) in the diagnostic: %s",
+                     len(extra_cols), extra_cols)
+    new_df.to_parquet(diag_path)
+    log.info("Wrote per-example token-count diagnostics to %s", diag_path)
 
     banner("Per-polygon feature extraction complete")
     return 0
