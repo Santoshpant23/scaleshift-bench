@@ -26,7 +26,13 @@ env/
 
 # Data and weights (do NOT check in)
 # Scope to project root so the Python package `src/scaleshift/data/` is not ignored.
-/data/
+# Whitelist /data/results/ as an exception so we can commit small evaluation
+# artifacts (JSON metrics + PNG plots) alongside the code.
+/data/*
+!/data/results/
+/data/results/*.tif
+/data/results/*.tiff
+/data/results/*.parquet
 /weights/
 /checkpoints/
 /outputs/
