@@ -1,0 +1,56 @@
+# Pilot AOIs for the Phase 1 starter Nepal Terai dataset.
+#
+# Three districts sampled east/center/west across the Terai for geographic
+# diversity. Bounding boxes are slightly conservative relative to the
+# administrative boundaries to stay clear of hilly Siwaliks at the north
+# margin. Update to GADM-derived polygons in Phase 1.5 if needed.
+#
+# bbox format: [west, south, east, north] in EPSG:4326 (lon/lat degrees).
+# season_window: [start_yyyy_mm_dd, end_yyyy_mm_dd] inclusive.
+
+version: 1
+crs: EPSG:4326
+
+districts:
+  chitwan:
+    province: Bagmati
+    location: central-Terai
+    bbox: [84.05, 27.40, 84.75, 27.75]
+    notes: >
+      Rice-dominant. Mixed smallholder and slightly larger plots near Bharatpur.
+      Reference for SERVIR-HKH 2019 Nepal rice mapping pilot.
+  dhanusha:
+    province: Madhesh
+    location: eastern-central-Terai
+    bbox: [85.80, 26.70, 86.20, 27.00]
+    notes: >
+      JECAM Nepal-Dhanusha/Mahottari site lives here (PI: Uma Shankar Panday,
+      Kathmandu University). Rice + sugarcane + maize + wheat + lentil rotation.
+      Multi-crop ground truth potentially available 2020-2022.
+  bardiya:
+    province: Lumbini
+    location: western-Terai
+    bbox: [81.30, 28.25, 81.70, 28.60]
+    notes: >
+      Rice + wheat + mustard. Lower mechanization than Chitwan. Median field
+      size expected smaller than Chitwan or Dhanusha.
+
+season_windows:
+  post_monsoon_2024:
+    range: ["2024-10-01", "2024-12-15"]
+    purpose: rice-maturity / winter-wheat-emergence; cleanest scenes (low cloud)
+  monsoon_2024:
+    range: ["2024-06-15", "2024-09-30"]
+    purpose: rice-vegetative; high cloud, harder
+  winter_2024_25:
+    range: ["2024-12-15", "2025-02-28"]
+    purpose: winter-wheat + lentil + mustard
+
+# Sampling strategy for the starter dataset.
+starter_dataset:
+  season_window: post_monsoon_2024
+  chips_per_district: 200
+  chip_size_px: 256          # 2.56 km at S2 10 m GSD
+  chip_overlap_px: 0
+  max_cloud_pct: 10
+  random_seed: 20260514
