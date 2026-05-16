@@ -29,10 +29,29 @@ import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, f1_score, recall_score, roc_auc_score
 from sklearn.model_selection import train_test_split
+from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
 
 from scaleshift.data.labels import FieldSizeBin
 from scaleshift.utils.logging import banner, get_logger
+
+
+def build_classifier(kind: str, seed: int):
+    if kind == "lr":
+        return LogisticRegression(max_iter=2000, class_weight="balanced", random_state=seed)
+    if kind == "mlp":
+        return MLPClassifier(
+            hidden_layer_sizes=(256,),
+            activation="relu",
+            alpha=1e-4,
+            batch_size=256,
+            learning_rate_init=1e-3,
+            max_iter=200,
+            early_stopping=True,
+            validation_fraction=0.1,
+            random_state=seed,
+        )
+    raise ValueError(f"unknown classifier kind: {kind!r}")
 
 
 log = get_logger("eval")
@@ -62,6 +81,8 @@ def eval_one_fm(
     meta: pd.DataFrame,
     test_size: float,
     seed: int,
+    classifier_kind: str = "lr",
+    save_predictions_path: Path | None = None,
 ) -> dict:
     strata = meta.apply(build_stratum_key, axis=1)
     # Drop tiny strata that scikit cannot split.
@@ -75,6 +96,7 @@ def eval_one_fm(
     y = meta.loc[keep_mask, "label"].to_numpy()
     bins = meta.loc[keep_mask, "size_bin"].to_numpy()
     strata_v = strata[keep_mask].to_numpy()
+    kept_meta = meta.loc[keep_mask].reset_index(drop=True)
 
     # Drop rows whose features are all-zero (failed inference).
     nonzero = ~np.all(X == 0, axis=1)
@@ -82,19 +104,42 @@ def eval_one_fm(
         log.warning("[%s] %d examples have all-zero features (failed inference) — dropping",
                     fm_name, int((~nonzero).sum()))
         X, y, bins, strata_v = X[nonzero], y[nonzero], bins[nonzero], strata_v[nonzero]
+        kept_meta = kept_meta.loc[nonzero].reset_index(drop=True)
 
-    X_train, X_test, y_train, y_test, bins_train, bins_test = train_test_split(
-        X, y, bins, test_size=test_size, stratify=strata_v, random_state=seed
+    indices = np.arange(len(X))
+    X_train, X_test, y_train, y_test, bins_train, bins_test, idx_train, idx_test = train_test_split(
+        X, y, bins, indices, test_size=test_size, stratify=strata_v, random_state=seed
     )
 
     scaler = StandardScaler().fit(X_train)
     X_train_s = scaler.transform(X_train)
     X_test_s = scaler.transform(X_test)
 
-    clf = LogisticRegression(max_iter=2000, class_weight="balanced", random_state=seed)
+    clf = build_classifier(classifier_kind, seed)
     clf.fit(X_train_s, y_train)
     y_pred = clf.predict(X_test_s)
     y_score = clf.predict_proba(X_test_s)[:, 1]
+
+    if save_predictions_path is not None:
+        test_meta = kept_meta.iloc[idx_test].reset_index(drop=True)
+        preds_df = pd.DataFrame({
+            "example_id": test_meta["example_id"].to_numpy(),
+            "chip_id": test_meta["chip_id"].to_numpy(),
+            "district": test_meta["district"].to_numpy(),
+            "label": y_test,
+            "size_bin": bins_test,
+            "y_pred": y_pred.astype(np.int8),
+            "y_score": y_score.astype(np.float32),
+            "fm_name": fm_name,
+            "classifier": classifier_kind,
+        })
+        save_predictions_path.parent.mkdir(parents=True, exist_ok=True)
+        # Append-or-create: keep predictions for all FMs together
+        if save_predictions_path.exists():
+            existing = pd.read_parquet(save_predictions_path)
+            existing = existing[~((existing.fm_name == fm_name) & (existing.classifier == classifier_kind))]
+            preds_df = pd.concat([existing, preds_df], ignore_index=True)
+        preds_df.to_parquet(save_predictions_path)
 
     overall = {
         "n_train": int(len(y_train)),
@@ -129,6 +174,10 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--fms", nargs="*", default=FM_NAMES)
     p.add_argument("--test-size", type=float, default=0.25)
     p.add_argument("--seed", type=int, default=20260514)
+    p.add_argument("--classifier", choices=["lr", "mlp"], default="lr",
+                   help="classification head: lr (logistic regression) or mlp (2-layer)")
+    p.add_argument("--save-predictions", type=Path, default=None,
+                   help="optional path to a parquet file collecting per-example predictions")
     return p.parse_args()
 
 
@@ -155,6 +204,7 @@ def main() -> int:
             "test_size": args.test_size,
             "seed": args.seed,
         },
+        "classifier": args.classifier,
         "fms": {},
     }
 
@@ -166,7 +216,9 @@ def main() -> int:
         feats = np.load(path)
         log.info("[%s] features shape=%s", fm_name, feats.shape)
         results["fms"][fm_name] = eval_one_fm(
-            fm_name, feats, meta, args.test_size, args.seed
+            fm_name, feats, meta, args.test_size, args.seed,
+            classifier_kind=args.classifier,
+            save_predictions_path=args.save_predictions,
         )
         ov = results["fms"][fm_name]["overall"]
         log.info("[%s] F1=%.3f  acc=%.3f  AUROC=%s",
