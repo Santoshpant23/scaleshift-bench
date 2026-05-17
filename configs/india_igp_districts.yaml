@@ -1,0 +1,56 @@
+# Phase 3 multi-region replication: India Indo-Gangetic Plain.
+#
+# Three districts sampled west/center/east across the Punjab-Haryana-UP
+# wheat-rice belt. Same agroclimatic zone as Nepal Terai (smallholder
+# wheat-rice rotation, post-monsoon harvest in Oct-Nov), different
+# country and slightly different field-size distribution (Indian Punjab
+# is somewhat larger fields on average than Nepal Terai).
+#
+# If the per-bin recall trends look like Nepal, the size effect
+# generalizes geographically. If they diverge, that itself is a finding.
+#
+# bbox format: [west, south, east, north] in EPSG:4326.
+
+version: 1
+crs: EPSG:4326
+
+districts:
+  ludhiana:
+    province: Punjab
+    location: west-IGP
+    bbox: [75.50, 30.70, 76.10, 31.00]
+    notes: >
+      Wheat-rice rotation. Intensive smallholder + medium-holder mix.
+      Heavily mechanized relative to Terai.
+  karnal:
+    province: Haryana
+    location: central-IGP
+    bbox: [76.70, 29.50, 77.20, 29.85]
+    notes: >
+      Wheat-rice rotation. Median field size larger than Nepal Terai.
+  meerut:
+    province: Uttar_Pradesh
+    location: east-IGP
+    bbox: [77.50, 28.75, 77.95, 29.10]
+    notes: >
+      Wheat-rice + sugarcane. Closer in field-size distribution to
+      Nepal Terai than Punjab is.
+
+season_windows:
+  post_monsoon_2024:
+    range: ["2024-10-01", "2024-12-15"]
+    purpose: rice-maturity / winter-wheat-emergence; matches Nepal window
+  monsoon_2024:
+    range: ["2024-06-15", "2024-09-30"]
+    purpose: rice-vegetative; high cloud
+  winter_2024_25:
+    range: ["2024-12-15", "2025-02-28"]
+    purpose: winter wheat
+
+starter_dataset:
+  season_window: post_monsoon_2024
+  chips_per_district: 200
+  chip_size_px: 256
+  chip_overlap_px: 0
+  max_cloud_pct: 10
+  random_seed: 20260517
