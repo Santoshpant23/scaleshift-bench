@@ -116,8 +116,10 @@ def build_examples(manifest, polygons, negatives) -> pd.DataFrame:
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
-    p.add_argument("--polygons", type=Path, default=DEFAULT_POLYGONS)
-    p.add_argument("--negatives", type=Path, default=DEFAULT_NEGATIVES)
+    p.add_argument("--polygons", type=Path, default=DEFAULT_POLYGONS,
+                   help="positive polygons parquet")
+    p.add_argument("--negatives", type=Path, default=DEFAULT_NEGATIVES,
+                   help="negative samples parquet")
     p.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
     p.add_argument("--fms", nargs="*", default=FM_NAMES)
     p.add_argument("--device", default="cuda")

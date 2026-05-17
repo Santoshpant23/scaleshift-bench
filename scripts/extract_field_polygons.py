@@ -35,6 +35,7 @@ from shapely.geometry import shape
 from scaleshift.data.labels import (
     FieldSizeBin,
     POLYGON_COLUMNS,
+    WORLDCOVER_CLASSES,
     WORLDCOVER_CROPLAND_CODE,
     read_manifest,
 )
@@ -58,14 +59,20 @@ def extract_for_chip(
     chip_id: str,
     district: str,
     lon: float,
+    positive_class: int = WORLDCOVER_CROPLAND_CODE,
 ) -> list[dict]:
-    """Read one WorldCover GeoTIFF and return a list of polygon records."""
+    """Read one WorldCover GeoTIFF and return a list of polygon records.
+
+    ``positive_class`` selects which WorldCover code is treated as the
+    positive class. Default 40 (cropland). Use 10 for tree cover, 50 for
+    built-up, etc. See ``WORLDCOVER_CLASSES`` for the full mapping.
+    """
     with rasterio.open(worldcover_path) as src:
         classes = src.read(1)
         src_crs = src.crs
         src_transform = src.transform
 
-    binary = (classes == WORLDCOVER_CROPLAND_CODE).astype(np.uint8)
+    binary = (classes == positive_class).astype(np.uint8)
     if binary.sum() == 0:
         return []
 
@@ -115,6 +122,9 @@ def parse_args() -> argparse.Namespace:
                    help="path to a chip manifest jsonl produced by build_chip_manifest.py")
     p.add_argument("--out", type=Path, default=Path("data/labels/polygons_terai_starter.parquet"))
     p.add_argument("--limit", type=int, default=None)
+    p.add_argument("--positive-class", type=int, default=WORLDCOVER_CROPLAND_CODE,
+                   help=f"WorldCover code treated as the positive class. "
+                        f"Codes: {WORLDCOVER_CLASSES}. Default 40 (cropland).")
     return p.parse_args()
 
 
@@ -140,6 +150,7 @@ def main() -> int:
             entry.chip_id,
             entry.region.district,
             entry.lon,
+            positive_class=args.positive_class,
         )
         all_records.extend(recs)
         if i % 50 == 0:

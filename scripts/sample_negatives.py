@@ -34,6 +34,11 @@ from scaleshift.data.labels import (
     WORLDCOVER_CROPLAND_CODE,
     read_manifest,
 )
+
+
+def parse_args_with_positive() -> argparse.Namespace:
+    # placeholder so the parser definition below can reference WORLDCOVER_CLASSES
+    return None
 from scaleshift.utils.logging import banner, get_logger
 
 
@@ -50,14 +55,15 @@ def sample_chip_negatives(
     target_n: int,
     min_spacing_px: int,
     rng: np.random.Generator,
+    positive_class: int = WORLDCOVER_CROPLAND_CODE,
 ) -> list[dict]:
     with rasterio.open(worldcover_path) as src:
         wc = src.read(1)
         transform = src.transform
         crs = str(src.crs)
 
-    non_crop = (wc != WORLDCOVER_CROPLAND_CODE) & (wc != 0)
-    rs, cs = np.where(non_crop)
+    non_positive = (wc != positive_class) & (wc != 0)
+    rs, cs = np.where(non_positive)
     if len(rs) == 0:
         return []
     candidate_idx = rng.permutation(len(rs))
@@ -97,6 +103,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--min-spacing-px", type=int, default=20,
                    help="minimum pixel spacing between negatives within a chip")
     p.add_argument("--seed", type=int, default=20260514)
+    p.add_argument("--positive-class", type=int, default=WORLDCOVER_CROPLAND_CODE,
+                   help="WorldCover code treated as the positive class; negatives "
+                        "are sampled from pixels NOT in this class. Default 40 (cropland).")
     return p.parse_args()
 
 
@@ -122,6 +131,7 @@ def main() -> int:
             args.per_chip,
             args.min_spacing_px,
             rng,
+            positive_class=args.positive_class,
         )
         if not recs:
             no_negatives += 1
