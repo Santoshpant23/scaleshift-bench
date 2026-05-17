@@ -1,0 +1,155 @@
+{
+  "classifier": "lr",
+  "fms": [
+    "anysat",
+    "clay-v1",
+    "prithvi-eo-2.0-300m",
+    "terramind-v1-base"
+  ],
+  "by_n_tokens": [
+    {
+      "fm": "anysat",
+      "n_bucket": "1",
+      "n": 2112,
+      "recall": 0.6993371212121212
+    },
+    {
+      "fm": "anysat",
+      "n_bucket": "2",
+      "n": 0,
+      "recall": NaN
+    },
+    {
+      "fm": "anysat",
+      "n_bucket": "3",
+      "n": 0,
+      "recall": NaN
+    },
+    {
+      "fm": "anysat",
+      "n_bucket": "4-7",
+      "n": 0,
+      "recall": NaN
+    },
+    {
+      "fm": "anysat",
+      "n_bucket": "8-15",
+      "n": 0,
+      "recall": NaN
+    },
+    {
+      "fm": "anysat",
+      "n_bucket": "16+",
+      "n": 0,
+      "recall": NaN
+    },
+    {
+      "fm": "clay-v1",
+      "n_bucket": "1",
+      "n": 281,
+      "recall": 0.5587188612099644
+    },
+    {
+      "fm": "clay-v1",
+      "n_bucket": "2",
+      "n": 611,
+      "recall": 0.6481178396072013
+    },
+    {
+      "fm": "clay-v1",
+      "n_bucket": "3",
+      "n": 44,
+      "recall": 0.5227272727272727
+    },
+    {
+      "fm": "clay-v1",
+      "n_bucket": "4-7",
+      "n": 717,
+      "recall": 0.6736401673640168
+    },
+    {
+      "fm": "clay-v1",
+      "n_bucket": "8-15",
+      "n": 221,
+      "recall": 0.755656108597285
+    },
+    {
+      "fm": "clay-v1",
+      "n_bucket": "16+",
+      "n": 238,
+      "recall": 0.5966386554621849
+    },
+    {
+      "fm": "prithvi-eo-2.0-300m",
+      "n_bucket": "1",
+      "n": 865,
+      "recall": 0.7294797687861272
+    },
+    {
+      "fm": "prithvi-eo-2.0-300m",
+      "n_bucket": "2",
+      "n": 704,
+      "recall": 0.7514204545454546
+    },
+    {
+      "fm": "prithvi-eo-2.0-300m",
+      "n_bucket": "3",
+      "n": 24,
+      "recall": 0.8333333333333334
+    },
+    {
+      "fm": "prithvi-eo-2.0-300m",
+      "n_bucket": "4-7",
+      "n": 347,
+      "recall": 0.7348703170028819
+    },
+    {
+      "fm": "prithvi-eo-2.0-300m",
+      "n_bucket": "8-15",
+      "n": 78,
+      "recall": 0.7051282051282052
+    },
+    {
+      "fm": "prithvi-eo-2.0-300m",
+      "n_bucket": "16+",
+      "n": 94,
+      "recall": 0.4148936170212766
+    },
+    {
+      "fm": "terramind-v1-base",
+      "n_bucket": "1",
+      "n": 865,
+      "recall": 0.7329479768786127
+    },
+    {
+      "fm": "terramind-v1-base",
+      "n_bucket": "2",
+      "n": 704,
+      "recall": 0.7386363636363636
+    },
+    {
+      "fm": "terramind-v1-base",
+      "n_bucket": "3",
+      "n": 24,
+      "recall": 0.7083333333333334
+    },
+    {
+      "fm": "terramind-v1-base",
+      "n_bucket": "4-7",
+      "n": 347,
+      "recall": 0.7809798270893372
+    },
+    {
+      "fm": "terramind-v1-base",
+      "n_bucket": "8-15",
+      "n": 78,
+      "recall": 0.6025641025641025
+    },
+    {
+      "fm": "terramind-v1-base",
+      "n_bucket": "16+",
+      "n": 94,
+      "recall": 0.48936170212765956
+    }
+  ]
+}
