@@ -202,12 +202,13 @@ def main() -> int:
         how="inner",
     )
 
+    from scipy.stats import pointbiserialr
+
     q2_rows = []
     for fm in WINDOW_PX:
         sub = merged[merged.fm_name == fm]
         if len(sub) < 50:
             continue
-        # Quartile of ndvi_sd
         sub = sub.copy()
         sub["sd_quartile"] = pd.qcut(sub.ndvi_sd, 4, labels=["Q1", "Q2", "Q3", "Q4"])
         for q in ["Q1", "Q2", "Q3", "Q4"]:
@@ -222,24 +223,43 @@ def main() -> int:
                 "ndvi_sd_min": float(ss.ndvi_sd.min()),
                 "ndvi_sd_max": float(ss.ndvi_sd.max()),
             })
-        # Point-biserial correlation between ndvi_sd and correctness.
-        if len(sub) >= 50:
-            from scipy.stats import pointbiserialr
-            r, p = pointbiserialr(sub.correct.to_numpy(), sub.ndvi_sd.to_numpy())
-            q2_rows.append({
+        r, p = pointbiserialr(sub.correct.to_numpy(), sub.ndvi_sd.to_numpy())
+        q2_rows.append({
+            "fm": fm,
+            "ndvi_sd_quartile": "_correlation",
+            "n": int(len(sub)),
+            "pointbiserial_r": float(r),
+            "pointbiserial_p": float(p),
+        })
+    q2 = pd.DataFrame(q2_rows)
+
+    # Q3: stratified correlation -- within each size_bin, does NDVI SD
+    # predict per-polygon error? This controls for the Simpson's-paradox
+    # confound that size_bin and NDVI SD are themselves negatively
+    # correlated.
+    q3_rows = []
+    for fm in WINDOW_PX:
+        sub = merged[merged.fm_name == fm]
+        for bin_name in bins_ordered:
+            ss = sub[sub.size_bin == bin_name]
+            if len(ss) < 30:
+                continue
+            r, p = pointbiserialr(ss.correct.to_numpy(), ss.ndvi_sd.to_numpy())
+            q3_rows.append({
                 "fm": fm,
-                "ndvi_sd_quartile": "_correlation",
-                "n": int(len(sub)),
+                "size_bin": bin_name,
+                "n": int(len(ss)),
                 "pointbiserial_r": float(r),
                 "pointbiserial_p": float(p),
             })
-    q2 = pd.DataFrame(q2_rows)
+    q3 = pd.DataFrame(q3_rows)
 
     out = {
         "classifier": args.classifier,
         "fms": list(WINDOW_PX.keys()),
         "Q1_sd_by_size_bin": q1.to_dict(orient="records"),
         "Q2_recall_by_sd_quartile": q2.to_dict(orient="records"),
+        "Q3_correlation_within_size_bin": q3.to_dict(orient="records"),
     }
     args.out_json.parent.mkdir(parents=True, exist_ok=True)
     args.out_json.write_text(json.dumps(out, indent=2))
@@ -259,6 +279,17 @@ def main() -> int:
         corr_rows = q2[q2.ndvi_sd_quartile == "_correlation"]
         for _, r in corr_rows.iterrows():
             print(f"  {r.fm:20s}  pointbiserial(NDVI_SD, correct) = {r['pointbiserial_r']:+.4f}  p={r['pointbiserial_p']:.4f}")
+
+    banner("Q3: WITHIN each size_bin, does NDVI SD predict error? (controls Simpson's confound)")
+    if not q3.empty:
+        piv3 = q3.pivot_table(index="size_bin", columns="fm", values="pointbiserial_r")
+        piv3 = piv3.reindex(bins_ordered)
+        print("Point-biserial r (NDVI_SD, correct) within each size_bin:")
+        print(piv3.to_string(float_format="%+.4f"))
+        print()
+        print("Sign interpretation:")
+        print("  Negative r => higher SD predicts error (centroid-purity hypothesis SUPPORTED)")
+        print("  Positive r => higher SD predicts CORRECT (centroid-purity hypothesis REJECTED)")
 
     return 0
 
