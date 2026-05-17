@@ -205,9 +205,27 @@ def main() -> int:
                 if is_tile_only or out.tokens is None:
                     feat_dim = int(out.features.shape[-1])
                 else:
-                    feat_dim = int(out.tokens.shape[-1])
+                    # Probe the pool by running the first example through it.
+                    # Multiscale increases the dim (e.g. 3x for k=0/1/3), so we
+                    # cannot trust the raw token shape here.
+                    tokens_1d_probe = out.tokens[0].cpu().numpy()
+                    tokens_2d_probe = reshape_to_grid(tokens_1d_probe)
+                    if tokens_2d_probe is not None:
+                        first_bbox = bboxes[idxs[0]]
+                        probe_pool, _ = pool_tokens_for_bbox(
+                            tokens_2d_probe,
+                            first_bbox[:4],
+                            chip_size_px=first_bbox[4],
+                            fm_input_size_px=fm.default_input_size_px,
+                            fm_patch_size_px=fm.patch_size_px or 1,
+                            strategy=args.pool_strategy,
+                        )
+                        feat_dim = int(probe_pool.shape[-1])
+                    else:
+                        feat_dim = int(out.tokens.shape[-1])
                 feats = np.zeros((len(examples), feat_dim), dtype=np.float32)
-                log.info("  feature dim = %d  is_tile_only=%s", feat_dim, is_tile_only)
+                log.info("  feature dim = %d  is_tile_only=%s  pool=%s",
+                         feat_dim, is_tile_only, args.pool_strategy)
 
             if is_tile_only or out.tokens is None:
                 feat_vec = out.features.cpu().numpy().reshape(-1)
