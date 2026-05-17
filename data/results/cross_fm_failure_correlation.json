@@ -1,0 +1,77 @@
+{
+  "classifier": "lr",
+  "fms": [
+    "anysat",
+    "clay-v1",
+    "prithvi-eo-2.0-300m",
+    "terramind-v1-base"
+  ],
+  "n_examples": 6945,
+  "pairs": [
+    {
+      "fm_a": "anysat",
+      "fm_b": "clay-v1",
+      "kappa": 0.6144721802763434,
+      "mcc": 0.6158540245166791,
+      "n_both_wrong": 1804,
+      "n_a_only_wrong": 502,
+      "n_b_only_wrong": 713,
+      "n_neither_wrong": 3926
+    },
+    {
+      "fm_a": "anysat",
+      "fm_b": "prithvi-eo-2.0-300m",
+      "kappa": 0.32461658318275,
+      "mcc": 0.32980948056263615,
+      "n_both_wrong": 1067,
+      "n_a_only_wrong": 1239,
+      "n_b_only_wrong": 725,
+      "n_neither_wrong": 3914
+    },
+    {
+      "fm_a": "anysat",
+      "fm_b": "terramind-v1-base",
+      "kappa": 0.3103941731184272,
+      "mcc": 0.31895276731237754,
+      "n_both_wrong": 991,
+      "n_a_only_wrong": 1315,
+      "n_b_only_wrong": 657,
+      "n_neither_wrong": 3982
+    },
+    {
+      "fm_a": "clay-v1",
+      "fm_b": "prithvi-eo-2.0-300m",
+      "kappa": 0.286067925030843,
+      "mcc": 0.2947450050418415,
+      "n_both_wrong": 1080,
+      "n_a_only_wrong": 1437,
+      "n_b_only_wrong": 712,
+      "n_neither_wrong": 3716
+    },
+    {
+      "fm_a": "clay-v1",
+      "fm_b": "terramind-v1-base",
+      "kappa": 0.2765447208087798,
+      "mcc": 0.28919671004300734,
+      "n_both_wrong": 1008,
+      "n_a_only_wrong": 1509,
+      "n_b_only_wrong": 640,
+      "n_neither_wrong": 3788
+    },
+    {
+      "fm_a": "prithvi-eo-2.0-300m",
+      "fm_b": "terramind-v1-base",
+      "kappa": 0.5365975607260706,
+      "mcc": 0.5374291453924306,
+      "n_both_wrong": 1120,
+      "n_a_only_wrong": 672,
+      "n_b_only_wrong": 528,
+      "n_neither_wrong": 4625
+    }
+  ],
+  "all_four_wrong": 654,
+  "exactly_one_wrong": 1206,
+  "exactly_two_wrong": 1295,
+  "exactly_three_wrong": 617,
+  "none_wrong": 3173
+}
