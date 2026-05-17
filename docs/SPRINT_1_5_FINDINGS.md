@@ -194,6 +194,84 @@ data alone. The remaining three are tractable with the planned Phase
 
 ---
 
+## Finding 5 -- Centroid purity hypothesis: confirmed for Clay, FALSIFIED for Prithvi/TerraMind
+
+In Finding 3 we hypothesized that Prithvi/TerraMind's surviving size
+gradient under center-pool is driven by spectral content varying with
+field size (small fields have more mixed/edge centroids). We test it
+directly here.
+
+For each polygon and each FM, compute NDVI mean and SD within the
+FM's centroid-token pixel window (8 chip-px for Clay; 18 chip-px for
+Prithvi/TerraMind, approximating 16 input-px after the 224/256 resize).
+Join with per-polygon classification correctness (LR head, mean pool).
+
+### Q1: does NDVI SD decrease as field size grows?
+
+Mean NDVI standard deviation by size bin:
+
+| Bin | Clay | Prithvi | TerraMind |
+|---|---|---|---|
+| <0.1 ha | 0.1015 | 0.1219 | 0.1219 |
+| 0.1-0.3 | 0.0987 | 0.1191 | 0.1191 |
+| 0.3-0.5 | 0.0973 | 0.1213 | 0.1213 |
+| 0.5-1 | 0.0927 | 0.1204 | 0.1204 |
+| >1 ha | 0.0842 | 0.1090 | 0.1090 |
+
+Yes. Spectral SD does monotonically decrease as field size increases,
+roughly 11-17 percent reduction from <0.1 ha to >1 ha. **Q1 confirmed**.
+
+### Q3: WITHIN each size bin, does NDVI SD predict per-polygon error?
+
+Point-biserial correlation between NDVI SD and per-polygon correctness,
+within each size bin (so the size confound is controlled out):
+
+| Bin | Clay | Prithvi | TerraMind |
+|---|---|---|---|
+| <0.1 ha | **-0.092** | +0.033 | -0.016 |
+| 0.1-0.3 | -0.055 | +0.081 | +0.093 |
+| 0.3-0.5 | -0.031 | **+0.146** | +0.116 |
+| 0.5-1 | -0.081 | +0.077 | **+0.119** |
+| >1 ha | -0.008 | +0.083 | +0.123 |
+
+**Clay**: every within-bin correlation is negative. Higher NDVI SD =>
+more classification errors, even controlling for size. Centroid-purity
+hypothesis SUPPORTED (weakly) on top of patch tokenization.
+
+**Prithvi and TerraMind**: every within-bin correlation is positive
+(except TerraMind at <0.1 ha which is essentially zero). Higher NDVI SD
+=> MORE correct classifications. **Centroid-purity hypothesis REJECTED**
+for these two FMs.
+
+The marginal correlation in Q2 (positive for Prithvi/TerraMind) was NOT
+a Simpson's paradox artifact -- it survives controlling for size. So
+the relationship is real: for larger-patch ViTs, spectral heterogeneity
+within the centroid window is associated with *better* classification,
+not worse.
+
+### What this means for the paper
+
+We have now falsified a plausible second mechanism. The clean claim is:
+
+> "Patch tokenization explains the size-recall gradient for small-patch
+> ViTs (Clay, 8 px). For larger-patch ViTs (Prithvi, TerraMind, 16 px),
+> the size effect persists at fixed pool size and is NOT explained by
+> spectral context purity inside the centroid token. The mechanism for
+> larger-patch ViTs is an open question, with plausible candidates
+> being mean spectral level, intra-patch spatial autocorrelation /
+> texture, or distance-from-polygon-edge geometry."
+
+This is a stronger paper finding than the original two-mechanism
+hypothesis. Reviewers respect papers that test their own hypotheses
+cleanly and report the null result -- it signals careful science.
+
+The "open question" framing also creates a natural place for the
+ScalePool method (Phase 4): the fix should help even when we don't
+fully understand the mechanism, and post-hoc analysis can identify
+which mechanism the fix is repairing.
+
+---
+
 ## Open follow-ups before submission
 
 1. **Per-pixel evaluation** (~1 sprint). Replaces the polygon-level

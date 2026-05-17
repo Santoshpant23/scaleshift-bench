@@ -1,0 +1,404 @@
+{
+  "classifier": "lr",
+  "fms": [
+    "clay-v1",
+    "prithvi-eo-2.0-300m",
+    "terramind-v1-base"
+  ],
+  "Q1_sd_by_size_bin": [
+    {
+      "fm": "clay-v1",
+      "size_bin": "<0.1ha",
+      "n": 2067,
+      "ndvi_sd_mean": 0.10154392491047458,
+      "ndvi_sd_median": 0.09803106635808945,
+      "evi_sd_mean": 0.08145889113997355,
+      "ndvi_mean_mean": 0.4712925569644765
+    },
+    {
+      "fm": "clay-v1",
+      "size_bin": "0.1-0.3ha",
+      "n": 4555,
+      "ndvi_sd_mean": 0.09866916699974944,
+      "ndvi_sd_median": 0.09646990895271301,
+      "evi_sd_mean": 0.08846706080145145,
+      "ndvi_mean_mean": 0.47486780892309255
+    },
+    {
+      "fm": "clay-v1",
+      "size_bin": "0.3-0.5ha",
+      "n": 1801,
+      "ndvi_sd_mean": 0.09733396278759428,
+      "ndvi_sd_median": 0.09593668580055237,
+      "evi_sd_mean": 0.07943645482060646,
+      "ndvi_mean_mean": 0.47435169287883305
+    },
+    {
+      "fm": "clay-v1",
+      "size_bin": "0.5-1ha",
+      "n": 1708,
+      "ndvi_sd_mean": 0.09270965258467646,
+      "ndvi_sd_median": 0.09000010788440704,
+      "evi_sd_mean": 0.07684454952017132,
+      "ndvi_mean_mean": 0.4740822808568931
+    },
+    {
+      "fm": "clay-v1",
+      "size_bin": ">1ha",
+      "n": 3248,
+      "ndvi_sd_mean": 0.08417566178989909,
+      "ndvi_sd_median": 0.08270597457885742,
+      "evi_sd_mean": 0.07012550581563172,
+      "ndvi_mean_mean": 0.45080767678427497
+    },
+    {
+      "fm": "prithvi-eo-2.0-300m",
+      "size_bin": "<0.1ha",
+      "n": 2067,
+      "ndvi_sd_mean": 0.12189255116699353,
+      "ndvi_sd_median": 0.11615005135536194,
+      "evi_sd_mean": 0.09620022129521574,
+      "ndvi_mean_mean": 0.4745710942318395
+    },
+    {
+      "fm": "prithvi-eo-2.0-300m",
+      "size_bin": "0.1-0.3ha",
+      "n": 4555,
+      "ndvi_sd_mean": 0.11911166484204952,
+      "ndvi_sd_median": 0.11391162127256393,
+      "evi_sd_mean": 0.1017197054355895,
+      "ndvi_mean_mean": 0.47968984531288766
+    },
+    {
+      "fm": "prithvi-eo-2.0-300m",
+      "size_bin": "0.3-0.5ha",
+      "n": 1801,
+      "ndvi_sd_mean": 0.12134365379181522,
+      "ndvi_sd_median": 0.11641211062669754,
+      "evi_sd_mean": 0.09639152761255036,
+      "ndvi_mean_mean": 0.48228012033116235
+    },
+    {
+      "fm": "prithvi-eo-2.0-300m",
+      "size_bin": "0.5-1ha",
+      "n": 1708,
+      "ndvi_sd_mean": 0.12036093149281846,
+      "ndvi_sd_median": 0.11492304876446724,
+      "evi_sd_mean": 0.09649641996667234,
+      "ndvi_mean_mean": 0.48529136572968307
+    },
+    {
+      "fm": "prithvi-eo-2.0-300m",
+      "size_bin": ">1ha",
+      "n": 3248,
+      "ndvi_sd_mean": 0.10897357426248284,
+      "ndvi_sd_median": 0.10809600725769997,
+      "evi_sd_mean": 0.08844820531561118,
+      "ndvi_mean_mean": 0.45962748704352874
+    },
+    {
+      "fm": "terramind-v1-base",
+      "size_bin": "<0.1ha",
+      "n": 2067,
+      "ndvi_sd_mean": 0.12189255116699353,
+      "ndvi_sd_median": 0.11615005135536194,
+      "evi_sd_mean": 0.09620022129521574,
+      "ndvi_mean_mean": 0.4745710942318395
+    },
+    {
+      "fm": "terramind-v1-base",
+      "size_bin": "0.1-0.3ha",
+      "n": 4555,
+      "ndvi_sd_mean": 0.11911166484204952,
+      "ndvi_sd_median": 0.11391162127256393,
+      "evi_sd_mean": 0.1017197054355895,
+      "ndvi_mean_mean": 0.47968984531288766
+    },
+    {
+      "fm": "terramind-v1-base",
+      "size_bin": "0.3-0.5ha",
+      "n": 1801,
+      "ndvi_sd_mean": 0.12134365379181522,
+      "ndvi_sd_median": 0.11641211062669754,
+      "evi_sd_mean": 0.09639152761255036,
+      "ndvi_mean_mean": 0.48228012033116235
+    },
+    {
+      "fm": "terramind-v1-base",
+      "size_bin": "0.5-1ha",
+      "n": 1708,
+      "ndvi_sd_mean": 0.12036093149281846,
+      "ndvi_sd_median": 0.11492304876446724,
+      "evi_sd_mean": 0.09649641996667234,
+      "ndvi_mean_mean": 0.48529136572968307
+    },
+    {
+      "fm": "terramind-v1-base",
+      "size_bin": ">1ha",
+      "n": 3248,
+      "ndvi_sd_mean": 0.10897357426248284,
+      "ndvi_sd_median": 0.10809600725769997,
+      "evi_sd_mean": 0.08844820531561118,
+      "ndvi_mean_mean": 0.45962748704352874
+    }
+  ],
+  "Q2_recall_by_sd_quartile": [
+    {
+      "fm": "clay-v1",
+      "ndvi_sd_quartile": "Q1",
+      "n": 837,
+      "recall": 0.7216248506571087,
+      "ndvi_sd_min": 0.0,
+      "ndvi_sd_max": 0.06661659479141235,
+      "pointbiserial_r": NaN,
+      "pointbiserial_p": NaN
+    },
+    {
+      "fm": "clay-v1",
+      "ndvi_sd_quartile": "Q2",
+      "n": 836,
+      "recall": 0.6686602870813397,
+      "ndvi_sd_min": 0.06662449240684509,
+      "ndvi_sd_max": 0.09294582903385162,
+      "pointbiserial_r": NaN,
+      "pointbiserial_p": NaN
+    },
+    {
+      "fm": "clay-v1",
+      "ndvi_sd_quartile": "Q3",
+      "n": 836,
+      "recall": 0.7117224880382775,
+      "ndvi_sd_min": 0.09312170743942261,
+      "ndvi_sd_max": 0.11768510192632675,
+      "pointbiserial_r": NaN,
+      "pointbiserial_p": NaN
+    },
+    {
+      "fm": "clay-v1",
+      "ndvi_sd_quartile": "Q4",
+      "n": 836,
+      "recall": 0.6399521531100478,
+      "ndvi_sd_min": 0.11769230663776398,
+      "ndvi_sd_max": 0.37842756509780884,
+      "pointbiserial_r": NaN,
+      "pointbiserial_p": NaN
+    },
+    {
+      "fm": "clay-v1",
+      "ndvi_sd_quartile": "_correlation",
+      "n": 3345,
+      "recall": NaN,
+      "ndvi_sd_min": NaN,
+      "ndvi_sd_max": NaN,
+      "pointbiserial_r": -0.06693937498597806,
+      "pointbiserial_p": 0.00010688640885319562
+    },
+    {
+      "fm": "prithvi-eo-2.0-300m",
+      "ndvi_sd_quartile": "Q1",
+      "n": 837,
+      "recall": 0.7383512544802867,
+      "ndvi_sd_min": 0.0,
+      "ndvi_sd_max": 0.08910389989614487,
+      "pointbiserial_r": NaN,
+      "pointbiserial_p": NaN
+    },
+    {
+      "fm": "prithvi-eo-2.0-300m",
+      "ndvi_sd_quartile": "Q2",
+      "n": 836,
+      "recall": 0.8026315789473685,
+      "ndvi_sd_min": 0.08914203941822052,
+      "ndvi_sd_max": 0.11263565719127655,
+      "pointbiserial_r": NaN,
+      "pointbiserial_p": NaN
+    },
+    {
+      "fm": "prithvi-eo-2.0-300m",
+      "ndvi_sd_quartile": "Q3",
+      "n": 836,
+      "recall": 0.8038277511961722,
+      "ndvi_sd_min": 0.1126621887087822,
+      "ndvi_sd_max": 0.14057165384292603,
+      "pointbiserial_r": NaN,
+      "pointbiserial_p": NaN
+    },
+    {
+      "fm": "prithvi-eo-2.0-300m",
+      "ndvi_sd_quartile": "Q4",
+      "n": 836,
+      "recall": 0.8205741626794258,
+      "ndvi_sd_min": 0.14057424664497375,
+      "ndvi_sd_max": 0.4536363482475281,
+      "pointbiserial_r": NaN,
+      "pointbiserial_p": NaN
+    },
+    {
+      "fm": "prithvi-eo-2.0-300m",
+      "ndvi_sd_quartile": "_correlation",
+      "n": 3345,
+      "recall": NaN,
+      "ndvi_sd_min": NaN,
+      "ndvi_sd_max": NaN,
+      "pointbiserial_r": 0.07416916591036926,
+      "pointbiserial_p": 1.7551590821384094e-05
+    },
+    {
+      "fm": "terramind-v1-base",
+      "ndvi_sd_quartile": "Q1",
+      "n": 837,
+      "recall": 0.7502986857825568,
+      "ndvi_sd_min": 0.0,
+      "ndvi_sd_max": 0.08910389989614487,
+      "pointbiserial_r": NaN,
+      "pointbiserial_p": NaN
+    },
+    {
+      "fm": "terramind-v1-base",
+      "ndvi_sd_quartile": "Q2",
+      "n": 836,
+      "recall": 0.8313397129186603,
+      "ndvi_sd_min": 0.08914203941822052,
+      "ndvi_sd_max": 0.11263565719127655,
+      "pointbiserial_r": NaN,
+      "pointbiserial_p": NaN
+    },
+    {
+      "fm": "terramind-v1-base",
+      "ndvi_sd_quartile": "Q3",
+      "n": 836,
+      "recall": 0.8624401913875598,
+      "ndvi_sd_min": 0.1126621887087822,
+      "ndvi_sd_max": 0.14057165384292603,
+      "pointbiserial_r": NaN,
+      "pointbiserial_p": NaN
+    },
+    {
+      "fm": "terramind-v1-base",
+      "ndvi_sd_quartile": "Q4",
+      "n": 836,
+      "recall": 0.8241626794258373,
+      "ndvi_sd_min": 0.14057424664497375,
+      "ndvi_sd_max": 0.4536363482475281,
+      "pointbiserial_r": NaN,
+      "pointbiserial_p": NaN
+    },
+    {
+      "fm": "terramind-v1-base",
+      "ndvi_sd_quartile": "_correlation",
+      "n": 3345,
+      "recall": NaN,
+      "ndvi_sd_min": NaN,
+      "ndvi_sd_max": NaN,
+      "pointbiserial_r": 0.08160721417459296,
+      "pointbiserial_p": 2.290390026725429e-06
+    }
+  ],
+  "Q3_correlation_within_size_bin": [
+    {
+      "fm": "clay-v1",
+      "size_bin": "<0.1ha",
+      "n": 517,
+      "pointbiserial_r": -0.09198283643809703,
+      "pointbiserial_p": 0.03654205578958288
+    },
+    {
+      "fm": "clay-v1",
+      "size_bin": "0.1-0.3ha",
+      "n": 1139,
+      "pointbiserial_r": -0.05478658637349371,
+      "pointbiserial_p": 0.06455105367806217
+    },
+    {
+      "fm": "clay-v1",
+      "size_bin": "0.3-0.5ha",
+      "n": 450,
+      "pointbiserial_r": -0.031202508050529133,
+      "pointbiserial_p": 0.5091094869231171
+    },
+    {
+      "fm": "clay-v1",
+      "size_bin": "0.5-1ha",
+      "n": 427,
+      "pointbiserial_r": -0.08124812885135499,
+      "pointbiserial_p": 0.09358919315975965
+    },
+    {
+      "fm": "clay-v1",
+      "size_bin": ">1ha",
+      "n": 812,
+      "pointbiserial_r": -0.008086046535140471,
+      "pointbiserial_p": 0.81804074675999
+    },
+    {
+      "fm": "prithvi-eo-2.0-300m",
+      "size_bin": "<0.1ha",
+      "n": 517,
+      "pointbiserial_r": 0.03327310175917737,
+      "pointbiserial_p": 0.45029132531997057
+    },
+    {
+      "fm": "prithvi-eo-2.0-300m",
+      "size_bin": "0.1-0.3ha",
+      "n": 1139,
+      "pointbiserial_r": 0.08133108746411312,
+      "pointbiserial_p": 0.006025585697748118
+    },
+    {
+      "fm": "prithvi-eo-2.0-300m",
+      "size_bin": "0.3-0.5ha",
+      "n": 450,
+      "pointbiserial_r": 0.1461678763509692,
+      "pointbiserial_p": 0.0018786318705936642
+    },
+    {
+      "fm": "prithvi-eo-2.0-300m",
+      "size_bin": "0.5-1ha",
+      "n": 427,
+      "pointbiserial_r": 0.07704488319285034,
+      "pointbiserial_p": 0.11189102339134403
+    },
+    {
+      "fm": "prithvi-eo-2.0-300m",
+      "size_bin": ">1ha",
+      "n": 812,
+      "pointbiserial_r": 0.08264747315363542,
+      "pointbiserial_p": 0.018498132157121275
+    },
+    {
+      "fm": "terramind-v1-base",
+      "size_bin": "<0.1ha",
+      "n": 517,
+      "pointbiserial_r": -0.01607467453058436,
+      "pointbiserial_p": 0.7153809448974933
+    },
+    {
+      "fm": "terramind-v1-base",
+      "size_bin": "0.1-0.3ha",
+      "n": 1139,
+      "pointbiserial_r": 0.09286044687490104,
+      "pointbiserial_p": 0.0017051513917020666
+    },
+    {
+      "fm": "terramind-v1-base",
+      "size_bin": "0.3-0.5ha",
+      "n": 450,
+      "pointbiserial_r": 0.11590199390825563,
+      "pointbiserial_p": 0.013889435275084048
+    },
+    {
+      "fm": "terramind-v1-base",
+      "size_bin": "0.5-1ha",
+      "n": 427,
+      "pointbiserial_r": 0.11925962524300968,
+      "pointbiserial_p": 0.013664621741230044
+    },
+    {
+      "fm": "terramind-v1-base",
+      "size_bin": ">1ha",
+      "n": 812,
+      "pointbiserial_r": 0.12266763405135547,
+      "pointbiserial_p": 0.0004594567409729546
+    }
+  ]
+}
