@@ -110,20 +110,56 @@ def pool_tokens_for_bbox(
     cin_min = c_min * scale
     rin_max = r_max * scale
     cin_max = c_max * scale
-    tok_r_min = max(0, min(h_tok - 1, int(rin_min // fm_patch_size_px)))
-    tok_c_min = max(0, min(w_tok - 1, int(cin_min // fm_patch_size_px)))
-    tok_r_max = max(0, min(h_tok - 1, int(rin_max // fm_patch_size_px)))
-    tok_c_max = max(0, min(w_tok - 1, int(cin_max // fm_patch_size_px)))
+    tok_r_min_raw = int(rin_min // fm_patch_size_px)
+    tok_c_min_raw = int(cin_min // fm_patch_size_px)
+    tok_r_max_raw = int(rin_max // fm_patch_size_px)
+    tok_c_max_raw = int(cin_max // fm_patch_size_px)
+    tok_r_min = max(0, min(h_tok - 1, tok_r_min_raw))
+    tok_c_min = max(0, min(w_tok - 1, tok_c_min_raw))
+    tok_r_max = max(0, min(h_tok - 1, tok_r_max_raw))
+    tok_c_max = max(0, min(w_tok - 1, tok_c_max_raw))
     region = tokens_2d[tok_r_min:tok_r_max + 1, tok_c_min:tok_c_max + 1]
     flat = region.reshape(-1, region.shape[-1])
     if strategy == "max":
         pooled = flat.max(axis=0)
     elif strategy == "mean":
         pooled = flat.mean(axis=0)
+    elif strategy == "multiscale":
+        # Phase 4 ScalePool v1: concatenate pools at multiple dilation scales.
+        # The hypothesis: small polygons (1-2 tokens at k=0) get noisy features;
+        # adding broader contexts at k=1 (one-token ring) and k=3 (broader
+        # neighborhood) gives the classifier complementary scale features.
+        # Larger polygons already have rich within-bbox content so the
+        # multi-scale add brings less relative gain. If the per-bin recall
+        # span shrinks under this pool, ScalePool works.
+        pooled = _pool_multiscale(
+            tokens_2d, tok_r_min, tok_c_min, tok_r_max, tok_c_max,
+            dilations=(0, 1, 3),
+        )
+        n_used = (tok_r_max - tok_r_min + 1) * (tok_c_max - tok_c_min + 1)
+        return pooled.astype(np.float32), int(n_used)
     else:
         raise ValueError(f"unknown pool strategy: {strategy!r}")
     n_used = (tok_r_max - tok_r_min + 1) * (tok_c_max - tok_c_min + 1)
     return pooled.astype(np.float32), int(n_used)
+
+
+def _pool_multiscale(
+    tokens_2d: np.ndarray,
+    tok_r_min: int, tok_c_min: int, tok_r_max: int, tok_c_max: int,
+    dilations: tuple[int, ...] = (0, 1, 3),
+) -> np.ndarray:
+    """Mean-pool over dilated bboxes, concatenate. Output dim = D * len(dilations)."""
+    h_tok, w_tok = tokens_2d.shape[:2]
+    pieces = []
+    for k in dilations:
+        r0 = max(0, tok_r_min - k)
+        c0 = max(0, tok_c_min - k)
+        r1 = min(h_tok - 1, tok_r_max + k)
+        c1 = min(w_tok - 1, tok_c_max + k)
+        region = tokens_2d[r0:r1 + 1, c0:c1 + 1]
+        pieces.append(region.reshape(-1, region.shape[-1]).mean(axis=0))
+    return np.concatenate(pieces, axis=0)
 
 
 def reshape_to_grid(tokens_1d: np.ndarray) -> np.ndarray | None:

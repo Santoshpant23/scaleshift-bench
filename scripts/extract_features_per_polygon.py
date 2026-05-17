@@ -125,9 +125,12 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--device", default="cuda")
     p.add_argument("--negative-half-px", type=int, default=8,
                    help="half-size of the negative-point window in chip pixels (default 8 = 160 m)")
-    p.add_argument("--pool-strategy", choices=["mean", "max", "center"], default="mean",
-                   help="token aggregation: 'mean' (default), 'max', or 'center' "
-                        "(single centroid token, for the size-controlled experiment)")
+    p.add_argument("--pool-strategy",
+                   choices=["mean", "max", "center", "multiscale"], default="mean",
+                   help="token aggregation: 'mean' (default), 'max', 'center' "
+                        "(single centroid token, for the size-controlled experiment), "
+                        "or 'multiscale' (ScalePool: concat of mean pools at "
+                        "k=0/1/3 dilations; output dim is 3x base FM dim)")
     return p.parse_args()
 
 
