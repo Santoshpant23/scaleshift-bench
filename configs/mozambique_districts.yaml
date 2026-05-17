@@ -1,0 +1,61 @@
+# Phase 3 multi-region replication: Mozambique smallholder regions.
+#
+# Three districts sampled across Mozambique's main smallholder belts:
+#   Buzi      -- Sofala province, central. Rice/maize lowlands near the
+#                Pungwe River basin. Strong smallholder dominance.
+#   Mocuba    -- Zambezia province, north-central. Rice/maize/cassava.
+#                Equatorial monsoon.
+#   Ribaue    -- Nampula province, north. Mixed cassava/maize/groundnut,
+#                drier than the southern sites.
+#
+# Climate is opposite to Nepal/India (Southern Hemisphere), so the
+# "post-monsoon" window here is Feb-Apr (late-rainy / early-dry, fields
+# spectrally most distinct). Field-size distribution is dominated by
+# very-smallholder plots (<0.3 ha is typical) -- this is the strongest
+# size-effect test we can run on public labels.
+#
+# Cited as a heavily-smallholder benchmark by Marshak et al. 2025
+# (Nature Comms / Sci Reports family, "field segmentation in Mozambique").
+
+version: 1
+crs: EPSG:4326
+
+districts:
+  buzi:
+    province: Sofala
+    location: central-coastal
+    bbox: [34.00, -19.95, 34.40, -19.65]
+    notes: >
+      Pungwe river basin. Rice + maize lowland. Cyclone-prone, recovery
+      farming visible in WorldCover.
+  mocuba:
+    province: Zambezia
+    location: north-central
+    bbox: [36.85, -17.10, 37.35, -16.80]
+    notes: >
+      Equatorial monsoon. Rice, maize, cassava smallholder mix.
+  ribaue:
+    province: Nampula
+    location: north
+    bbox: [38.10, -15.20, 38.55, -14.90]
+    notes: >
+      Drier than the southern sites. Cassava-maize-groundnut.
+
+season_windows:
+  post_monsoon_2024:
+    range: ["2024-02-01", "2024-04-15"]
+    purpose: >
+      Late rainy / early dry season in Mozambique -- crops are mature or
+      recently harvested, spectrally most distinct from background. This
+      is the regional analogue of Nepal's Oct-Dec window.
+  dry_2024:
+    range: ["2024-06-01", "2024-08-31"]
+    purpose: dry season, bare-soil/stubble; harder spectral signal
+
+starter_dataset:
+  season_window: post_monsoon_2024
+  chips_per_district: 200
+  chip_size_px: 256
+  chip_overlap_px: 0
+  max_cloud_pct: 15        # Mozambique cloudier than Nepal/India in this window
+  random_seed: 20260518
