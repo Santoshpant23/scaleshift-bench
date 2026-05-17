@@ -123,6 +123,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--device", default="cuda")
     p.add_argument("--negative-half-px", type=int, default=8,
                    help="half-size of the negative-point window in chip pixels (default 8 = 160 m)")
+    p.add_argument("--pool-strategy", choices=["mean", "max", "center"], default="mean",
+                   help="token aggregation: 'mean' (default), 'max', or 'center' "
+                        "(single centroid token, for the size-controlled experiment)")
     return p.parse_args()
 
 
@@ -226,6 +229,7 @@ def main() -> int:
                             chip_size_px=chip_size,
                             fm_input_size_px=fm.default_input_size_px,
                             fm_patch_size_px=fm.patch_size_px or 1,
+                            strategy=args.pool_strategy,
                         )
                         feats[idx] = pooled
                         n_tokens_used[idx] = n_used

@@ -80,35 +80,48 @@ def pool_tokens_for_bbox(
     chip_size_px: int,
     fm_input_size_px: int,
     fm_patch_size_px: int,
+    strategy: str = "mean",
 ) -> tuple[np.ndarray, int]:
-    """Mean-pool token grid over the bbox. Returns (pooled, n_tokens_used).
+    """Pool token grid over the bbox. Returns (pooled, n_tokens_used).
 
-    tokens_2d: [H_tok, W_tok, D] numpy array of patch tokens.
-    bbox_chip_px: (r_min, c_min, r_max, c_max) in chip pixel coords.
-    chip_size_px: spatial extent of the chip (assumed square; pass max(h, w)).
-    fm_input_size_px: size the FM resizes the chip to internally.
-    fm_patch_size_px: FM's per-token patch size in input pixels.
-
-    If the bbox spans less than one token, the single containing token is
-    returned (n_tokens_used = 1).
+    strategy:
+        'mean'   -- mean over all tokens overlapping the bbox (default)
+        'max'    -- elementwise max
+        'center' -- single token at the bbox centroid (forces n_tokens=1)
+                    Use this for the size-controlled experiment: every
+                    polygon is pooled from exactly one token regardless
+                    of its actual size, isolating the patch-tokenization
+                    mechanism from confounds.
     """
     scale = fm_input_size_px / chip_size_px
     r_min, c_min, r_max, c_max = bbox_chip_px
+    h_tok, w_tok = tokens_2d.shape[:2]
+
+    if strategy == "center":
+        center_r_chip = (r_min + r_max) / 2.0
+        center_c_chip = (c_min + c_max) / 2.0
+        tok_r = int((center_r_chip * scale) // fm_patch_size_px)
+        tok_c = int((center_c_chip * scale) // fm_patch_size_px)
+        tok_r = max(0, min(h_tok - 1, tok_r))
+        tok_c = max(0, min(w_tok - 1, tok_c))
+        return tokens_2d[tok_r, tok_c].astype(np.float32), 1
+
     rin_min = r_min * scale
     cin_min = c_min * scale
     rin_max = r_max * scale
     cin_max = c_max * scale
-    tok_r_min = int(rin_min // fm_patch_size_px)
-    tok_c_min = int(cin_min // fm_patch_size_px)
-    tok_r_max = int(rin_max // fm_patch_size_px)
-    tok_c_max = int(cin_max // fm_patch_size_px)
-    h_tok, w_tok = tokens_2d.shape[:2]
-    tok_r_min = max(0, min(h_tok - 1, tok_r_min))
-    tok_r_max = max(0, min(h_tok - 1, tok_r_max))
-    tok_c_min = max(0, min(w_tok - 1, tok_c_min))
-    tok_c_max = max(0, min(w_tok - 1, tok_c_max))
+    tok_r_min = max(0, min(h_tok - 1, int(rin_min // fm_patch_size_px)))
+    tok_c_min = max(0, min(w_tok - 1, int(cin_min // fm_patch_size_px)))
+    tok_r_max = max(0, min(h_tok - 1, int(rin_max // fm_patch_size_px)))
+    tok_c_max = max(0, min(w_tok - 1, int(cin_max // fm_patch_size_px)))
     region = tokens_2d[tok_r_min:tok_r_max + 1, tok_c_min:tok_c_max + 1]
-    pooled = region.reshape(-1, region.shape[-1]).mean(axis=0)
+    flat = region.reshape(-1, region.shape[-1])
+    if strategy == "max":
+        pooled = flat.max(axis=0)
+    elif strategy == "mean":
+        pooled = flat.mean(axis=0)
+    else:
+        raise ValueError(f"unknown pool strategy: {strategy!r}")
     n_used = (tok_r_max - tok_r_min + 1) * (tok_c_max - tok_c_min + 1)
     return pooled.astype(np.float32), int(n_used)
 
