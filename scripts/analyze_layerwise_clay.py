@@ -140,10 +140,12 @@ def main():
         by_chip[row["chip_id"]].append(int(idx))
     if args.limit_chips:
         chip_ids = list(by_chip.keys())[: args.limit_chips]
-        by_chip = {k: by_chip[k] for k in chip_ids}
         keep = set(b for c in chip_ids for b in by_chip[c])
-        examples = examples.iloc[sorted(keep)].reset_index(drop=True)
-        examples["row_idx"] = range(len(examples))
+        # Keep all original row indices intact; just filter examples to the kept rows
+        # so iloc[idx] continues to resolve to the correct row.
+        examples = examples.loc[examples["row_idx"].isin(keep)].copy()
+        examples = examples.set_index("row_idx", drop=False).sort_index()
+        by_chip = {k: by_chip[k] for k in chip_ids}
         log.info("Limited to %d chips / %d examples", len(by_chip), len(examples))
 
     # Pre-compute bboxes
@@ -152,7 +154,7 @@ def main():
     for chip_id, idxs in by_chip.items():
         entry = chip_lookup[chip_id]
         for idx in idxs:
-            row = examples.iloc[idx]
+            row = examples.loc[idx]
             if row["label"] == 1:
                 poly = poly_by_id[row["example_id"]]
                 r0, c0, r1, c1, h, w = polygon_bbox_in_chip_px(poly["geometry"], entry.s2_path)
@@ -175,11 +177,14 @@ def main():
     n_layers = len(per_layer_probe)
     log.info("Clay has %d encoder blocks", n_layers)
 
-    # Pre-allocate one feature matrix per layer
+    # Pre-allocate one feature matrix per layer. We use the FULL examples
+    # length to keep row indices stable; rows outside the limit (if any)
+    # stay zero and are filtered out at probe time via the nonzero mask.
+    total_n = examples["row_idx"].max() + 1
     feat_dim = int(per_layer_probe[0].shape[-1])
-    log.info("Per-block feature dim = %d", feat_dim)
+    log.info("Per-block feature dim = %d  total rows = %d", feat_dim, total_n)
     layer_feats: list[np.ndarray] = [
-        np.zeros((len(examples), feat_dim), dtype=np.float32) for _ in range(n_layers)
+        np.zeros((total_n, feat_dim), dtype=np.float32) for _ in range(n_layers)
     ]
 
     log.info("Extracting per-layer features for each chip...")
@@ -209,17 +214,20 @@ def main():
         if n_chips_done % 25 == 0:
             log.info("  processed %d/%d chips", n_chips_done, len(by_chip))
 
-    # Train one linear probe per layer
-    log.info("Training per-layer probes...")
-    y_all = examples["label"].to_numpy()
-    bins_all = examples["size_bin"].to_numpy()
-    strata = examples.apply(build_stratum, axis=1)
+    # Train one linear probe per layer.
+    # row_idx is the canonical index into layer_feats; examples is kept in
+    # row_idx order so loc[idx]/at[idx] resolve correctly.
+    examples_sorted = examples.sort_index()
+    y_all = examples_sorted["label"].to_numpy()
+    bins_all = examples_sorted["size_bin"].to_numpy()
+    row_idx_all = examples_sorted.index.to_numpy()  # the canonical feature indices
+    strata = examples_sorted.apply(build_stratum, axis=1)
     counts = strata.value_counts()
     keep_mask = strata.isin(counts[counts >= 2].index).to_numpy()
-    indices = np.arange(len(examples))
 
+    feature_indices = row_idx_all[keep_mask]
     idx_tr, idx_te, y_tr, y_te, bins_tr, bins_te = train_test_split(
-        indices[keep_mask], y_all[keep_mask], bins_all[keep_mask],
+        feature_indices, y_all[keep_mask], bins_all[keep_mask],
         test_size=args.test_size, stratify=strata[keep_mask].to_numpy(), random_state=args.seed,
     )
 
@@ -241,15 +249,19 @@ def main():
         if len(idx_te_keep) < 100:
             results["layers"].append({"layer": layer_idx, "error": "insufficient nonzero test feats"})
             continue
-        X_tr_s = StandardScaler().fit(feats[idx_tr_keep])
-        Xt = X_tr_s.transform(feats[idx_tr_keep])
-        Xe = X_tr_s.transform(feats[idx_te_keep])
+        # idx_tr_keep / idx_te_keep are row_idx values (canonical feature indices).
+        # We need their corresponding y and bin values; build a row_idx -> position
+        # map on examples_sorted once and reuse.
+        scaler = StandardScaler().fit(feats[idx_tr_keep])
+        Xt = scaler.transform(feats[idx_tr_keep])
+        Xe = scaler.transform(feats[idx_te_keep])
+        y_tr_keep = examples_sorted.loc[idx_tr_keep, "label"].to_numpy()
+        y_te_keep = examples_sorted.loc[idx_te_keep, "label"].to_numpy()
+        bins_te_keep = examples_sorted.loc[idx_te_keep, "size_bin"].to_numpy()
         clf = LogisticRegression(max_iter=2000, class_weight="balanced", random_state=args.seed)
-        clf.fit(Xt, y_all[idx_tr_keep])
+        clf.fit(Xt, y_tr_keep)
         y_pred = clf.predict(Xe)
         y_score = clf.predict_proba(Xe)[:, 1]
-        y_te_keep = y_all[idx_te_keep]
-        bins_te_keep = bins_all[idx_te_keep]
         per_bin = {}
         for bin_name in bins_ordered:
             mask = (y_te_keep == 1) & (bins_te_keep == bin_name)
