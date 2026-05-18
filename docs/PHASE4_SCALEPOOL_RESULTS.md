@@ -153,6 +153,90 @@ ablated across three regions and four FMs.
 
 ---
 
+## Phase 5a — MLP head on ScalePool features (negative-leaning result)
+
+We tested the simplest version of a learnable adapter: replace the LR
+classifier with sklearn's 2-layer MLP (256 hidden, early stopping) on
+the same multi-scale ScalePool features. Question: does the additional
+classifier capacity close the F1 cost of ScalePool?
+
+### Headline numbers (Nepal, ScalePool features, MLP head)
+
+| FM | F1 (LR ScalePool) | F1 (MLP ScalePool) | Δ F1 |
+|---|---|---|---|
+| Clay | 0.624 | 0.705 | **+8.1pt** |
+| Prithvi | 0.733 | 0.761 | +2.8pt |
+| TerraMind | 0.758 | **0.781** | +2.3pt |
+| AnySat (tile) | 0.685 | 0.681 | −0.4pt |
+
+Surface-level: MLP recovers and exceeds the LR F1 cost. TerraMind
+reaches F1=0.781 (the highest of any configuration tested).
+
+### But the per-bin pattern reveals the same artifact
+
+Same Clay per-bin recall pattern as the Sprint 1.5 MLP-on-baseline
+experiment:
+
+| Bin | Clay LR ScalePool | Clay MLP ScalePool |
+|---|---|---|
+| <0.1 ha | 0.609 | **0.894** |
+| 0.1-0.3 | 0.601 | 0.834 |
+| 0.3-0.5 | 0.642 | 0.767 |
+| 0.5-1 | 0.642 | 0.658 |
+| >1 ha | 0.703 | **0.320** |
+| Span | 0.103 | **0.57** |
+
+The Sprint 1.5 finding holds: MLP heads exploit the n_tokens-distribution
+asymmetry between positives (variable n_tokens) and negatives (~constant
+1-4 tokens) as a shortcut. ScalePool reduces but does NOT eliminate
+this artifact -- Clay's >1 ha recall drops to 0.32. Prithvi/TerraMind
+show milder versions (span ~0.12-0.14 instead of 0.05) but the pattern
+is unmistakable.
+
+### Implication
+
+A "proper" Phase 5 adapter that closes the LR F1 gap WITHOUT inducing
+the n_tokens artifact requires one of:
+
+1. **n_tokens-conditioned classifier**: train MLP that takes n_tokens
+   as an explicit input, so it cannot use n_tokens as a sneaky
+   classification signal.
+2. **n_tokens-matched negatives**: re-sample negatives so the n_tokens
+   distribution matches positives within each size bin.
+3. **Per-pixel methodology**: drop polygon-level pooling entirely;
+   classify each chip pixel using the token covering it. No
+   n_tokens-asymmetry.
+
+Option 3 is the long-term answer (flagged in Sprint 1.5). Options 1-2
+are tighter incremental fixes.
+
+### What to report in the paper
+
+Honest claim:
+
+> "ScalePool v1 with linear probing produces a small but consistent
+> reduction in per-bin recall span where the baseline gradient is
+> monotone. Replacing the linear probe with an MLP head recovers
+> the universal F1 cost and improves overall F1 by 2-8 points across
+> FMs, but exposes the n_tokens-distribution methodology artifact
+> we documented in our mechanism analysis: MLP heads exploit the
+> systematic n_tokens difference between positives and negatives as
+> a shortcut. A proper learnable adapter requires either n_tokens-
+> conditioned training or a switch to per-pixel evaluation, which we
+> flag as the natural next direction."
+
+This is the right scientific framing. We propose a method, observe
+that the simple non-linear extension creates a methodology problem we
+already characterized, and point at the next experiment.
+
+### Artifacts
+
+- `data/results/eval_nepal_scalepool_mlp.json` — MLP-on-ScalePool eval
+  (Nepal only; the artifact pattern is region-stable from Sprint 1.5
+  evidence, so further regions are deferred to the per-pixel rewrite).
+
+---
+
 ## Open follow-ups (Phase 5)
 
 1. **Learnable scale-conditioned adapter**: replace the concat-then-LR
