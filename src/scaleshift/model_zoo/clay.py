@@ -194,37 +194,42 @@ class ClayFoundationModel(FoundationModel):
         batch: dict[str, torch.Tensor],
     ) -> list[torch.Tensor]:
         """Run the encoder once and return a list of (B, 1+L, D) tensors,
-        one per transformer block (NOT including the input embedding).
+        one per transformer block.
 
-        Used for the layer-wise linear probe analysis. Tokens are NOT
-        masked at inference (mask_ratio=0 by construction).
+        Implementation note: Clay v1.5 uses vit_pytorch's SimpleViT
+        Transformer where ``transformer.layers`` is a ModuleList of
+        [Attention, FeedForward] pairs. ModuleList has no .forward, so
+        nn.Module.register_forward_hook does not fire. We monkey-patch
+        ``transformer.forward`` for the duration of one call, which
+        replicates vit_pytorch's loop and captures the post-block
+        activation at each depth.
+
+        Tokens are NOT masked at inference (mask_ratio=0 by
+        construction).
         """
         if not self._loaded:
             self.load()
         encoder = self._module.model.encoder
         encoder.mask_ratio = 0.0
-        outputs: list[torch.Tensor] = []
-        hooks = []
-        # Identify the transformer block list inside the encoder.
-        blocks = None
-        for attr in ("blocks", "encoder_blocks", "transformer", "layers"):
-            cand = getattr(encoder, attr, None)
-            if isinstance(cand, (torch.nn.ModuleList, list)):
-                blocks = cand
-                break
-        if blocks is None:
-            raise RuntimeError("Could not locate Clay encoder block list "
-                               "(tried .blocks, .encoder_blocks, .transformer, .layers)")
-        for blk in blocks:
-            def _hook(_module, _inp, output, store=outputs):
-                # Most ViT blocks return tensor [B, N, D]; some return tuple.
-                t = output[0] if isinstance(output, (tuple, list)) else output
-                store.append(t.detach().clone())
-            hooks.append(blk.register_forward_hook(_hook))
+        transformer = encoder.transformer
+        if not hasattr(transformer, "layers"):
+            raise RuntimeError("Clay encoder.transformer has no .layers attribute")
+        captured: list[torch.Tensor] = []
+        original_forward = transformer.forward
+
+        def patched_forward(x):
+            for attn, ff in transformer.layers:
+                x = attn(x) + x
+                x = ff(x) + x
+                captured.append(x.detach().clone())
+            if hasattr(transformer, "norm"):
+                return transformer.norm(x)
+            return x
+
+        transformer.forward = patched_forward
         try:
             with torch.no_grad():
                 _ = encoder(batch)
         finally:
-            for h in hooks:
-                h.remove()
-        return outputs
+            transformer.forward = original_forward
+        return captured
