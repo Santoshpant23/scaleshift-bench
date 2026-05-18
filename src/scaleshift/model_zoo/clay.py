@@ -188,3 +188,43 @@ class ClayFoundationModel(FoundationModel):
             features=cls_tok,
             attention=None,
         )
+
+    def encode_per_layer(
+        self,
+        batch: dict[str, torch.Tensor],
+    ) -> list[torch.Tensor]:
+        """Run the encoder once and return a list of (B, 1+L, D) tensors,
+        one per transformer block (NOT including the input embedding).
+
+        Used for the layer-wise linear probe analysis. Tokens are NOT
+        masked at inference (mask_ratio=0 by construction).
+        """
+        if not self._loaded:
+            self.load()
+        encoder = self._module.model.encoder
+        encoder.mask_ratio = 0.0
+        outputs: list[torch.Tensor] = []
+        hooks = []
+        # Identify the transformer block list inside the encoder.
+        blocks = None
+        for attr in ("blocks", "encoder_blocks", "transformer", "layers"):
+            cand = getattr(encoder, attr, None)
+            if isinstance(cand, (torch.nn.ModuleList, list)):
+                blocks = cand
+                break
+        if blocks is None:
+            raise RuntimeError("Could not locate Clay encoder block list "
+                               "(tried .blocks, .encoder_blocks, .transformer, .layers)")
+        for blk in blocks:
+            def _hook(_module, _inp, output, store=outputs):
+                # Most ViT blocks return tensor [B, N, D]; some return tuple.
+                t = output[0] if isinstance(output, (tuple, list)) else output
+                store.append(t.detach().clone())
+            hooks.append(blk.register_forward_hook(_hook))
+        try:
+            with torch.no_grad():
+                _ = encoder(batch)
+        finally:
+            for h in hooks:
+                h.remove()
+        return outputs
