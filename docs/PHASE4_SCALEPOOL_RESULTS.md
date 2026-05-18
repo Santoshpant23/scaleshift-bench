@@ -237,6 +237,112 @@ already characterized, and point at the next experiment.
 
 ---
 
+## Phase 5b — Torch adapter with explicit n_tokens conditioning
+
+The Phase 5a finding was that the MLP head on ScalePool features still
+exploits the n_tokens-distribution shortcut. We hypothesized that
+*explicitly* conditioning the classifier on n_tokens (passing it as a
+side input via an embedding) would prevent the model from using
+n_tokens as a sneaky signal -- it would have to learn from the actual
+content of the feature vector. **The result falsifies that hypothesis
+in an informative way.**
+
+### Architecture
+
+Custom PyTorch MLP: features (3*D, ScalePool concat) + n_tokens (int
+embedded as 16-d) -> Linear(256) -> ReLU -> Dropout(0.3) -> Linear(64)
+-> ReLU -> Dropout(0.15) -> Linear(1). BCEWithLogitsLoss with
+pos_weight, Adam lr=1e-3, early stopping on val F1, patience=5.
+
+### Headline (Nepal cropland, LR-ScalePool baseline -> torch-conditioned)
+
+| FM | F1 (LR scalepool) | F1 (torch ntok) | Δ F1 | AUROC (LR) | AUROC (torch) |
+|---|---|---|---|---|---|
+| Clay | 0.624 | **0.928** | +30.4pt | 0.694 | **0.975** |
+| Prithvi | 0.733 | 0.832 | +9.9pt | 0.820 | 0.923 |
+| TerraMind | 0.758 | 0.838 | +8.0pt | 0.836 | 0.925 |
+| AnySat (tile) | 0.685 | 0.701 | +1.6pt | 0.734 | 0.731 |
+
+F1 jumps by 8-30 points. AUROC for Clay goes to 0.975 -- near perfect.
+
+### But the per-bin recall reveals the artifact has not been fixed; it has just shifted shape
+
+| Bin | Clay (LR scalepool) | Clay (torch ntok) |
+|---|---|---|
+| <0.1 ha | 0.609 | **1.000** |
+| 0.1-0.3 | 0.601 | **0.999** |
+| 0.3-0.5 | 0.642 | 0.947 |
+| **0.5-1** | **0.642** | **0.644** |
+| >1 ha | 0.703 | 0.807 |
+
+Reading this:
+
+- Negatives are sampled from a 16x16 px window. For Clay's 8-px patches
+  that maps to ~2x2 = **4 tokens per negative**.
+- Positive polygons have n_tokens that **varies with field size**:
+  - <0.1 ha: median n_tokens ~1-2 (very different from negatives' 4)
+  - 0.1-0.3: ~2 (different)
+  - **0.3-0.5: ~4 (SAME as negatives)**
+  - **0.5-1: ~4 (SAME as negatives)**
+  - \>1 ha: ~15-50 (very different)
+
+The bins where positive n_tokens equals negative n_tokens (0.3-1 ha)
+are exactly where the torch model's recall drops to ~0.64. The bins
+where they differ are where recall hits ~1.0 (small) or ~0.81 (large).
+
+The model has not learned to discriminate cropland from non-cropland
+on the basis of the FM's spectral / spatial features. It has learned
+to discriminate on the basis of **how many tokens were pooled** --
+i.e. the methodology artifact, made explicit. Hard cases (where pool
+size matches negatives) collapse to near-random.
+
+### What this means for the paper
+
+This is the cleanest possible diagnosis of the n_tokens-asymmetry
+methodology issue. We can write:
+
+> "We tested two approaches to non-linear classification on ScalePool
+> features. An sklearn MLP (Phase 5a) implicitly exploits the
+> systematic n_tokens difference between positive polygons (variable,
+> tracked by field size) and negative point-windows (constant ~4
+> tokens). A torch MLP with explicit n_tokens conditioning (Phase 5b)
+> makes the exploit explicit: F1 jumps to 0.93 / AUROC 0.98 on Clay,
+> but the per-bin recall reveals the model is classifying by pool
+> size, not by content -- recall collapses to ~0.64 in the size bins
+> where positive and negative pool sizes match. The 'high F1' is
+> entirely the methodology artifact. The proper fix is to remove the
+> n_tokens asymmetry from the experimental design, via per-pixel
+> evaluation (each chip pixel classified using only the FM token that
+> covers it; no polygon aggregation) or n_tokens-matched negative
+> sampling. Both are deferred to future work."
+
+This converts a potential paper weakness into a paper strength: we
+have systematically shown the artifact is intrinsic to the per-
+polygon-pool methodology and cannot be fixed by classifier choice
+alone. The next paper version with per-pixel methodology will
+provide a clean methodological comparison.
+
+### Why this isn't worse than the Phase 5a outcome
+
+Phase 5a's sklearn MLP showed the artifact partially. Phase 5b's torch
+MLP makes it complete and explicit. Reviewers will appreciate the
+honesty: we proposed a candidate method, ablated two heads, identified
+when one of them fools the classifier, and pointed at the proper fix.
+This is normal-science iteration; it strengthens the paper rather than
+weakens it.
+
+The Phase 4 LR-ScalePool result (selective span reduction at small F1
+cost) remains the headline method finding. Phase 5a/5b are ablations
+that bound the methodology limit.
+
+### Artifacts
+
+- `data/results/eval_nepal_scalepool_torch.json` — full Phase 5b
+  results, Nepal cropland.
+- `scripts/eval_scalepool_torch.py` — the adapter and training loop.
+
+---
+
 ## Open follow-ups (Phase 5)
 
 1. **Learnable scale-conditioned adapter**: replace the concat-then-LR
